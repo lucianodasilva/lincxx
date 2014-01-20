@@ -53,6 +53,13 @@ namespace lincxx {
 
 			}
 
+			inline void visit () {
+				for (auto i : __list_ref) {
+					if (__exp_ref.evaluate (i))
+						__call_ref.call (i);
+				}
+			}
+
 		};
 
 	}

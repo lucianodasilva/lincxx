@@ -50,4 +50,10 @@ int main (int arg_c, char **arg_v) {
 	from (source_b).where (id < 10) [
 		[](test_struct i) { std::cout << i.id << std::endl; }
 	].select ();
+
+	// if you wish to only have a "filtered" visitor
+	// without returning the selected items call visit instead
+	from (source_b).where (id < 10) [
+		[](test_struct i) {std::cout << i.id << std::endl; }
+	].visit ();
 }
