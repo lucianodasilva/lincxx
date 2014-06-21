@@ -2,6 +2,7 @@
 #define _lincxx_h_
 
 #include <list>
+#include <functional>
 
 namespace lincxx {
 
@@ -63,11 +64,24 @@ namespace lincxx {
 			static null_expression instance;
 
 			template < class item_type >
-			inline bool evaluate (item_type & item) { return true; }
+			inline bool evaluate (item_type & item) const { return true; }
 
 		};
 
 		null_expression null_expression::instance;
+
+		template < class value_type > 
+		struct lambda_expression {
+
+			std::function < bool (value_type &) > exp;
+
+			inline lambda_expression (const lambda_expression < value_type > & v ) : exp (v.exp) {}
+			inline lambda_expression (const std::function < bool (value_type &) > & e) : exp (e) {}
+
+			template < class item_type >
+			inline bool evaluate (item_type & item) const { return exp (item); }
+
+		};
 
 	}
 
@@ -315,8 +329,10 @@ namespace lincxx {
 
 			using value_type = typename source_handle::value_type;
 
-			source_handle			__list_ref;
-			const exp_type &		__exp_ref;
+			source_handle	_list;
+			exp_type		_exp;
+
+			inline query_handle (const source_handle & src, const exp_type & exp) : _list (src), _exp (exp) {}
 
 			// define filtering iterator
 			class iterator;
@@ -331,14 +347,14 @@ namespace lincxx {
 					_source_end;
 
 				inline void search_first () {
-					while (_source_it != _source_end && !_query.__exp_ref.evaluate (*_source_it))
+					while (_source_it != _source_end && !_query._exp.evaluate (*_source_it))
 						++_source_it;
 				}
 
 				inline void search_next () {
 					do
 						++_source_it;
-					while (_source_it != _source_end && !_query.__exp_ref.evaluate (*_source_it));
+					while (_source_it != _source_end && !_query._exp.evaluate (*_source_it));
 				}
 
 			public:
@@ -369,15 +385,34 @@ namespace lincxx {
 
 			// ---------------------------------------------
 
-			inline iterator begin () { return iterator (*this, __list_ref.begin (), __list_ref.end ()); }
-			inline iterator end () { return iterator (*this, __list_ref.end (), __list_ref.end ()); }
+			inline iterator begin () { return iterator (*this, _list.begin (), _list.end ()); }
+			inline iterator end () { return iterator (*this, _list.end (), _list.end ()); }
 
-			template < class filter_exp_type >
-			inline query_handle < source_handle, filter_exp_type > where (const filter_exp_type & exp) const {
-				return query_handle < source_handle, filter_exp_type> {
-					__list_ref,
-						exp
-				};
+			template <
+				class lhe_type,
+				class rhe_type,
+				class eva_type
+			>
+			inline query_handle < source_handle, binary_oper < lhe_type, rhe_type, eva_type > > where (const binary_oper < lhe_type, rhe_type, eva_type > & exp) const {
+				return query_handle < source_handle, binary_oper < lhe_type, rhe_type, eva_type > > (
+					_list,
+					exp
+				);
+			}
+
+			//template < class filter_exp_type >
+			//inline query_handle < source_handle, filter_exp_type > where (const filter_exp_type & exp) const {
+			//	return query_handle < source_handle, filter_exp_type> {
+			//		__list_ref,
+			//			exp
+			//	};
+			//}
+
+			inline query_handle < source_handle, lambda_expression < value_type > > where (const std::function < bool (value_type &) > & exp) const {
+				return query_handle < source_handle, lambda_expression < value_type > > (
+					_list,
+					lambda_expression < value_type > (exp)
+				);
 			}
 
 			inline std::list < value_type > to_list () {
