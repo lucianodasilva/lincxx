@@ -75,9 +75,13 @@ int main (int arg_c, char **arg_v) {
 	auto list_res = from (source_b).where (id < 10).to_list ();
 
 	// if the condition expression needs to be more complex than supported
-	// for example requiring the access to fields of fields you can use an anonymous fuction
+	// for example requiring the access to fields of fields you can use an anonymous function
 	// that takes in item as parameter and returns a boolean 
 	auto query_e = from (source_b).where ([](test_struct & i) -> bool {
 		return i.id < 10 && i.ref.x != "A";
 	});
+
+	// and a couple more tools
+	auto v1 = query_e.first_or_default ({0});
+	size_t count = query_e.count ();
 }

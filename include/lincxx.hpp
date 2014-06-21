@@ -400,14 +400,6 @@ namespace lincxx {
 				);
 			}
 
-			//template < class filter_exp_type >
-			//inline query_handle < source_handle, filter_exp_type > where (const filter_exp_type & exp) const {
-			//	return query_handle < source_handle, filter_exp_type> {
-			//		__list_ref,
-			//			exp
-			//	};
-			//}
-
 			inline query_handle < source_handle, lambda_expression < value_type > > where (const std::function < bool (value_type &) > & exp) const {
 				return query_handle < source_handle, lambda_expression < value_type > > (
 					_list,
@@ -428,6 +420,24 @@ namespace lincxx {
 			inline void visit (callback_type & call) {
 				for (auto i : *this)
 					call (i);
+			}
+
+			// other tools
+			inline const size_t count () {
+				size_t c = 0;
+				for (auto i : *this)
+					++c;
+
+				return c;
+			}
+
+			inline const value_type & first_or_default (const value_type & default_value) {
+				auto it = begin ();
+
+				if (it != end ())
+					return *it;
+
+				return default_value;
 			}
 
 		};
