@@ -82,6 +82,8 @@ int main (int arg_c, char **arg_v) {
 	});
 
 	// and a couple more tools
-	auto v1 = query_e.first_or_default ({0});
-	size_t count = query_e.count ();
+	query_e.first_or_default ({0});
+	query_e.count ();
+
+	auto dist = from (source_a).where (lincxx::item < 5).distinct ();
 }

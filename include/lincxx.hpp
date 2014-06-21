@@ -2,6 +2,8 @@
 #define _lincxx_h_
 
 #include <list>
+#include <map>
+
 #include <functional>
 
 namespace lincxx {
@@ -342,22 +344,22 @@ namespace lincxx {
 			private:
 				const query_handle_type & _query;
 
-				typename source_handle::iterator
-					_source_it,
-					_source_end;
-
 				inline void search_first () {
-					while (_source_it != _source_end && !_query._exp.evaluate (*_source_it))
-						++_source_it;
+					while (source_it != source_end && !_query._exp.evaluate (*source_it))
+						++source_it;
 				}
 
 				inline void search_next () {
 					do
-						++_source_it;
-					while (_source_it != _source_end && !_query._exp.evaluate (*_source_it));
+						++source_it;
+					while (source_it != source_end && !_query._exp.evaluate (*source_it));
 				}
 
 			public:
+
+				typename source_handle::iterator
+					source_it,
+					source_end;
 
 				inline iterator () {}
 
@@ -365,21 +367,21 @@ namespace lincxx {
 					const query_handle_type & ref_query,
 					const typename source_handle::iterator & v_it,
 					const typename source_handle::iterator & v_end
-					) : _query (ref_query), _source_it (v_it), _source_end (v_end) {
+					) : _query (ref_query), source_it (v_it), source_end (v_end) {
 					search_first ();
 				}
 
-				inline iterator (const iterator & v) : _query (v._query), _source_it (v._source_it), _source_end (v._source_end) {}
+				inline iterator (const iterator & v) : _query (v._query), source_it (v.source_it), source_end (v.source_end) {}
 
 				inline iterator & operator ++ () {
 					search_next ();
 					return *this;
 				}
 
-				inline bool operator == (const iterator & v) { return _source_it == v._source_it; }
-				inline bool operator != (const iterator & v) { return _source_it != v._source_it; }
+				inline bool operator == (const iterator & v) { return source_it == v.source_it; }
+				inline bool operator != (const iterator & v) { return source_it != v.source_it; }
 
-				inline value_type & operator * () { return *_source_it; }
+				inline value_type & operator * () { return *source_it; }
 
 			};
 
@@ -438,6 +440,30 @@ namespace lincxx {
 					return *it;
 
 				return default_value;
+			}
+
+			template < class compare = std::less < value_type > >
+			inline std::list < value_type > distinct () {
+
+				using key_map = std::map < value_type, int, compare > ;
+					
+				key_map keys;
+				std::list < value_type > ret;
+
+				key_map::const_iterator
+					map_it,
+					map_end = keys.cend ();
+
+				for (auto i : *this) {
+
+					map_it = keys.find (i);
+					if (map_it == map_end) {
+						keys [i] = 0;
+						ret.push_back (i);
+					}
+				}
+
+				return ret;
 			}
 
 		};
