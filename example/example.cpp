@@ -1,4 +1,4 @@
-#include <lincxx.h>
+#include <lincxx.hpp>
 #include <vector>	   
 #include <iostream>
 
