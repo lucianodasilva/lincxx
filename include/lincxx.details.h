@@ -63,26 +63,6 @@ namespace lincxx {
 
 		null_expression null_expression::instance;
 
-		struct null_callback {
-
-			static null_callback instance;
-
-			template < class item_type >
-			inline void call (const item_type & item) const {}
-		};
-
-		null_callback null_callback::instance;
-
-		template < class callback_type >
-		struct callback_handle {
-
-			callback_type address;
-
-			template < class item_type >
-			inline void call (item_type & item) const { address (item); }
-
-		};
-
 	}
 }
 

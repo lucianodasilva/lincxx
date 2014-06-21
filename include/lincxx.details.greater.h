@@ -24,10 +24,14 @@ namespace lincxx {
 		using greater = binary_oper < lhe_type, rhe_type, greater_evaluator >;
 
 		template < class lhe_type, class rhe_type >
-		inline auto operator > (const lhe_type & l, const rhe_type & r) 
-			->greater < decltype (param (l)), decltype (param (r)) >
+		inline 
+			greater <
+				typename details::param_traits < lhe_type >::type,
+				typename details::param_traits < rhe_type >::type
+			>
+		operator > (const lhe_type & l, const rhe_type & r)
 		{
-			return greater < decltype (param (l)), decltype (param (r)) > { param (l), param (r) };
+			return { param (l), param (r) };
 		}
 
 	}

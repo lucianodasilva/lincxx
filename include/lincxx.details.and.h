@@ -24,10 +24,9 @@ namespace lincxx {
 		using and = lincxx::details::binary_oper < lhe_type, rhe_type, and_evaluator >;
 
 		template < class lhe_type, class rhe_type >
-		inline auto operator && (const lhe_type & l, const rhe_type & r) 
-			->and < lhe_type, rhe_type >
+		inline and < lhe_type, rhe_type > operator && (const lhe_type & l, const rhe_type & r)
 		{
-			return and < lhe_type, rhe_type > { l, r };
+			return { l, r };
 		}
 
 	}

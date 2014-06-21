@@ -24,10 +24,9 @@ namespace lincxx {
 		using or = binary_oper < lhe_type, rhe_type, or_evaluator >;
 
 		template < class lhe_type, class rhe_type >
-		inline auto operator || (const lhe_type & l, const rhe_type & r) 
-			->or < lhe_type, rhe_type >
+		inline or < lhe_type, rhe_type > operator || (const lhe_type & l, const rhe_type & r)
 		{
-			return or < lhe_type, rhe_type > { l, r };
+			return { l, r };
 		}
 
 	}

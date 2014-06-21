@@ -24,9 +24,13 @@ namespace lincxx {
 		using equals = binary_oper < lhe_type, rhe_type, equals_evaluator >;
 
 		template < class lhe_type, class rhe_type >
-		inline auto operator == (const lhe_type & l, const rhe_type & r)
-			->equals < decltype (param (l)), decltype (param (r)) > {
-			return equals < decltype (param (l)), decltype (param (r)) > { param (l), param (r) };
+		inline 
+			equals <
+				typename details::param_traits < lhe_type >::type,
+				typename details::param_traits < rhe_type >::type
+			>
+		operator == (const lhe_type & l, const rhe_type & r) {
+			return { param (l), param (r) };
 		}
 
 	}

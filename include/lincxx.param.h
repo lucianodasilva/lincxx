@@ -49,35 +49,56 @@ namespace lincxx {
 
 		};
 
+		template < class t >
+		struct param_traits {
+			using type = literal_param < t >;
+			static inline type create (const t & v) { return{v}; }
+		};
+
+		template < class struct_type, class field_type >
+		struct param_traits < field_type (struct_type::*) > {
+			using type = field_param < struct_type, field_type >;
+			static inline type create (field_type (struct_type::*v)) { return{v};}
+		};
+
+		template < class struct_type, class method_type >
+		struct param_traits < method_type (struct_type::*) () > {
+			using type = method_param < struct_type, method_type >;
+			static inline type create (method_type (struct_type::*v) ()) { return{v}; }
+		};
+
+		template < class t >
+		struct param_traits < literal_param < t > >  {
+			using type = literal_param < t >;
+			static inline type create (const type & v) {return v;}
+		};
+
+		template < class struct_type, class field_type >
+		struct param_traits < field_param < struct_type, field_type > > {
+			using type = field_param < struct_type, field_type >;
+			static inline type create (const type & v) { return v; }
+		};
+
+		template < class struct_type, class method_type >
+		struct param_traits < method_param < struct_type, method_type > > {
+			using type = method_param < struct_type, method_type >;
+			static inline type create (const type & v) { return v; }
+		};
+
+		template < >
+		struct param_traits < item_param > {
+			using type = item_param;
+			static inline type create (const type & v) { return v; }
+		};
+
 	}
 
 	details::item_param item;
 
-	template < class val_type >
-	inline details::literal_param < val_type > param (const val_type & v) {
-		return details::literal_param < val_type > { v };
+	template < class type >
+	inline typename details::param_traits < type >::type param (const type & v) {
+		return details::param_traits < type >::create (v);
 	}
-
-	template < class struct_type, class field_type >
-	inline details::field_param < struct_type, field_type > param (field_type (struct_type::*field_address)) {
-		return details::field_param < struct_type, field_type > { field_address };
-	}
-
-	template < class struct_type, class method_type >
-	inline details::method_param < struct_type, method_type > param (method_type (struct_type::*method_address) ()) {
-		return details::method_param < struct_type, method_type > { method_address };
-	}
-
-	template < class value_t >
-	inline details::literal_param < value_t > param (const details::literal_param < value_t > & v) { return v; }
-
-	template < class struct_type, class field_type >
-	inline details::field_param < struct_type, field_type > param (const details::field_param < struct_type , field_type > & v) { return v; }
-
-	template < class struct_type, class method_type >
-	inline details::method_param < struct_type, method_type > param (const details::method_param < struct_type, method_type > & v) { return v; }
-
-	inline details::item_param param (const details::item_param & v) { return v; }
 }
 
 #endif

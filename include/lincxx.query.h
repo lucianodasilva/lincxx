@@ -9,16 +9,15 @@ namespace lincxx {
 
 	namespace details {
 
-		template < class source_handle, class exp_type = null_expression, class call_type = null_callback >
+		template < class source_handle, class exp_type = null_expression >
 		struct query_handle {
 
-			using query_handle_type = query_handle < source_handle, exp_type, call_type >;
+			using query_handle_type = query_handle < source_handle, exp_type >;
 
 			using value_type = typename source_handle::value_type;
 
 			source_handle			__list_ref;
 			const exp_type &		__exp_ref;
-			const call_type &		__call_ref;
 
 			// define filtering iterator
 			class iterator;
@@ -33,25 +32,14 @@ namespace lincxx {
 					_source_end;
 
 				inline void search_first () {
-					while (!_query.__exp_ref.evaluate (*_source_it)) {
+					while (_source_it != _source_end && !_query.__exp_ref.evaluate (*_source_it))
 						++_source_it;
-
-						if (_source_it == _source_end)
-							return;
-					}
-
-					_query.__call_ref.call (*_source_it);
 				}
 
 				inline void search_next () {
-					do {
+					do
 						++_source_it;
-
-						if (_source_it == _source_end)
-							return;
-					} while (!_query.__exp_ref.evaluate (*_source_it));
-
-					_query.__call_ref.call (*_source_it);
+					while (_source_it != _source_end && !_query.__exp_ref.evaluate (*_source_it));
 				}
 
 			public:
@@ -86,43 +74,27 @@ namespace lincxx {
 			inline iterator begin () { return iterator (*this, __list_ref.begin (), __list_ref.end ()); }
 			inline iterator end () { return iterator (*this, __list_ref.end (), __list_ref.end ()); }
 
-			template < class callback_type >
-			inline query_handle < source_handle, exp_type, callback_handle < callback_type > > operator [] (callback_type & call) {
-				return query_handle < source_handle, exp_type, callback_handle < callback_type > > {
-					__list_ref,
-					__exp_ref,
-					callback_handle <callback_type> { call }
-				};
-			}
-
 			template < class filter_exp_type >
-			inline query_handle < source_handle, filter_exp_type, call_type > where (const filter_exp_type & exp) const {
-				return query_handle < source_handle, filter_exp_type, call_type> {
+			inline query_handle < source_handle, filter_exp_type > where (const filter_exp_type & exp) const {
+				return query_handle < source_handle, filter_exp_type> {
 					__list_ref,
-					exp,
-					__call_ref
+					exp
 				};
 			}
 
 			inline std::list < value_type > to_list () {
-
 				std::list < value_type > result;
 
-				for (auto i : __list_ref) {
-					if (__exp_ref.evaluate (i)) {
-						__call_ref.call (i);
-						result.push_back (i);
-					}
-				}
+				for (auto i : *this)
+					result.push_back (i);
 
 				return result;
-
 			}
 
-			inline void visit () {
-				for (auto i : *this) {
-					__call_ref.call (i);
-				}
+			template < class callback_type >
+			inline void visit ( callback_type & call ) {
+				for (auto i : *this)
+					call (i);
 			}
 
 		};
@@ -133,8 +105,7 @@ namespace lincxx {
 	inline details::query_handle < details::array_handle < item_type, array_size > > from (item_type (&array_inst) [array_size] ) {
 		return details::query_handle < details::array_handle < item_type, array_size > > {
 			{ &array_inst[0] }, 
-			details::null_expression::instance,
-			details::null_callback::instance
+			details::null_expression::instance
 		};
 	}
 
@@ -142,8 +113,7 @@ namespace lincxx {
 	inline details::query_handle < details::list_handle < list_type > > from (list_type & list) {
 		return details::query_handle < details::list_handle < list_type > > {
 			{list},
-			details::null_expression::instance,
-			details::null_callback::instance
+			details::null_expression::instance
 		};
 	}
 

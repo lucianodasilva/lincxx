@@ -24,10 +24,14 @@ namespace lincxx {
 		using lesser = binary_oper < lhe_type, rhe_type, lesser_evaluator >;
 
 		template < class lhe_type, class rhe_type >
-		inline auto operator < (const lhe_type & l, const rhe_type & r) 
-			->lesser < decltype (param (l)), decltype (param (r)) >
+		inline 
+			lesser <
+				typename details::param_traits < lhe_type >::type,
+				typename details::param_traits < rhe_type >::type
+			>
+		operator < (const lhe_type & l, const rhe_type & r) 
 		{
-			return lesser < decltype (param (l)), decltype (param (r)) > { param (l), param (r) };
+			return { param (l), param (r) };
 		}
 
 	}

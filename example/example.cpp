@@ -52,13 +52,15 @@ int main (int arg_c, char **arg_v) {
 
 	// finally you can send a visitor anonymous function to the 
 	// selected items
-	from (source_b).where (id < 10) [
-		[](test_struct i) { std::cout << i.id << std::endl; }
-	].to_list ();
+	//from (source_b).where (id < 10) [
+	//	[](test_struct i) { std::cout << i.id << std::endl; }
+	//].to_list ();
 
 	// if you wish to only have a "filtered" visitor
 	// without returning the selected items call visit instead
-	from (source_b).where (id < 10) [
-		[](test_struct i) {std::cout << i.id << std::endl; }
-	].visit ();
+	//from (source_b).where (id < 10) [
+	//	[](test_struct i) {std::cout << i.id << std::endl; }
+	//].visit ();
+
+	from (source_b).where (id < 10).visit ([](test_struct i) {std::cout << i.id << std::endl; });
 }
