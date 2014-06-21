@@ -24,13 +24,16 @@ namespace lincxx {
 		template < class list_type >
 		struct list_handle {
 
-			const list_type & data;
+			using value_type = typename list_type::value_type;
+			using iterator = typename list_type::iterator;
 
-			inline auto begin () -> decltype (data.begin ()) {
+			list_type & data;
+
+			inline typename list_type::iterator begin () {
 				return data.begin ();
 			}
 
-			inline auto end () -> decltype (data.end ()) { 
+			inline typename list_type::iterator end () { 
 				return data.end ();
 			}
 
@@ -38,6 +41,9 @@ namespace lincxx {
 
 		template < class item_type, size_t array_size >
 		struct array_handle {
+
+			using value_type = item_type;
+			using iterator = item_type*;
 
 			item_type * data;
 
@@ -52,6 +58,7 @@ namespace lincxx {
 
 			template < class item_type >
 			inline bool evaluate (item_type & item) { return true; }
+
 		};
 
 		null_expression null_expression::instance;
