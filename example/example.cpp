@@ -89,4 +89,6 @@ int main (int arg_c, char **arg_v) {
 	query_e.count ();
 
 	auto dist = from (source_a).where (lincxx::item < 5).distinct ();
+
+	auto tupel_query = query_e.select (id);
 }

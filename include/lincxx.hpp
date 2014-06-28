@@ -189,6 +189,55 @@ namespace lincxx {
 	}
 
 	// ---------
+	// Tupel construction
+	// ---------
+	namespace details {
+
+		template < class ... type_v >
+		struct tupel;
+
+		template < size_t i, class tupel_t >
+		struct tupel_element;
+
+		template < class t, class ... type_v >
+		struct tupel_element < 0, tupel < t, type_v ... > > {
+			using type = t;
+			using tupel_type = tupel < t, type_v ... >;
+		};
+
+		template < size_t i, class t, class ... type_v >
+		struct tupel_element < i, tupel < t, type_v ... > > 
+			: public tupel_element < i - 1, tupel < type_v ... > > {};
+
+		template < class t, class ... type_v >
+		struct tupel < t, type_v ... > 
+			: public tupel < type_v ... > {
+
+			using this_type = tupel < t, type_v ... > ;
+
+			t element;
+
+			inline tupel (t v, type_v ... arg_v) 
+				: tupel < type_v ... > (arg_v ...), element (v) {}
+
+			template < size_t index >
+			auto get () ->
+				typename tupel_element < index, this_type >::type 
+			{
+				return ((typename tupel_element < index, this_type >::tupel_type)*this).element;
+			}
+
+			template < size_t index >
+			void set (typename tupel_element < index, this_type >::type v)
+			{
+				((typename tupel_element < index, this_type >::tupel_type)*this).element = v;
+			}
+
+		};
+
+	}
+
+	// ---------
 	// Operators
 	// ---------
 	namespace details {
@@ -482,6 +531,12 @@ namespace lincxx {
 				}
 
 				return ret;
+			}
+
+			template < class ... param_tv >
+			query_handle < source_handle, exp_type > select (param_tv ... arg_v) {
+
+				return *this;
 			}
 
 		};
