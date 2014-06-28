@@ -12,6 +12,7 @@ struct test_struct_deep {
 struct test_struct {
 
 	int id;
+	bool select;
 	test_struct_deep ref;
 
 	inline int calculate_stuffs () { return id * 2; }
@@ -77,12 +78,14 @@ int main (int arg_c, char **arg_v) {
 	// if the condition expression needs to be more complex than supported
 	// for example requiring the access to fields of fields you can use an anonymous function
 	// that takes in item as parameter and returns a boolean 
-	auto query_e = from (source_b).where ([](test_struct & i) -> bool {
+	auto query_e = from (source_b).where ([](test_struct & i) {
 		return i.id < 10 && i.ref.x != "A";
 	});
 
-	// and a couple more tools
+	// first or default
 	query_e.first_or_default ({0});
+	query_e.first_or_default ({0}, id > 3);
+
 	query_e.count ();
 
 	auto dist = from (source_a).where (lincxx::item < 5).distinct ();

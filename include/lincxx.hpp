@@ -442,6 +442,24 @@ namespace lincxx {
 				return default_value;
 			}
 
+			template < 
+				class lhe_type,
+				class rhe_type,
+				class eva_type
+			>
+			inline const value_type & first_or_default (const value_type & default_value, const binary_oper < lhe_type, rhe_type, eva_type > & exp) {
+				auto
+					it = begin (),
+					it_end = end ();
+
+				for (; it != it_end; ++it) {
+					if (exp.evaluate (*it))
+						return *it;
+				}
+
+				return default_value;
+			}
+
 			template < class compare = std::less < value_type > >
 			inline std::list < value_type > distinct () {
 
