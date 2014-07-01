@@ -45,7 +45,7 @@ int main (int arg_c, char **arg_v) {
 	// parameters can be literals, lincxx::item ( the current item while iterating )
 	// as shown above, but also public members of classes.
 	// The supported member types are public fields and methods with no parameters
-	test_struct source_b [] = {{2, {"A"}}, {7, {"A"}}, {12, {"A"}}, {5, {"B"}}, {1, {"A"}}, {2, {"A"}}, {72, {"A"}}, {1, {"B"}}, {5, {"A"}}, {8, {"A"}}, {1, {"A"}}};
+	test_struct source_b [] = {{2, true, {"A"}}, {7, false, {"A"}}, {12, false, {"A"}}, {5, true, {"B"}}, {1, true, {"A"}}, {2, false, {"A"}}, {72, false, {"A"}}, {1, true, {"B"}}, {5, true, {"A"}}, {8, true, {"A"}}, {1, true, {"A"}}};
 
 	auto query_b = from (source_b).where (
 		param (&test_struct::id)
