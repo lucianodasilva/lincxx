@@ -23,7 +23,15 @@ struct test_struct {
 int main (int arg_c, char **arg_v) {
 
 	int source_a [] = { 8, 5, 7 ,8 ,2, 5, 6, 3, 3, 7, 2, 4, 1};
-
+	
+	// parameters can be literals, lincxx::item ( the current item while iterating )
+	// as shown above, but also public members of classes.
+	// The supported member types are public fields and methods with no parameters
+	test_struct source_b [] = {{2, true, {"A"}}, {7, false, {"A"}}, {12, false, {"A"}}, {5, true, {"B"}}, {1, true, {"A"}}, {2, false, {"A"}}, {72, false, {"A"}}, {1, true, {"B"}}, {5, true, {"A"}}, {8, true, {"A"}}, {1, true, {"A"}}};
+	
+	auto id_s = param (&test_struct::id);
+	auto select_test = from (source_b).select (id_s);
+	
 	// simple filter example:
 
 	// select all items lesser than 5
@@ -41,11 +49,6 @@ int main (int arg_c, char **arg_v) {
 	for (auto i : from (source_a).where (lincxx::item < 5)) {
 		std::cout << i << std::endl;
 	}
-
-	// parameters can be literals, lincxx::item ( the current item while iterating )
-	// as shown above, but also public members of classes.
-	// The supported member types are public fields and methods with no parameters
-	test_struct source_b [] = {{2, true, {"A"}}, {7, false, {"A"}}, {12, false, {"A"}}, {5, true, {"B"}}, {1, true, {"A"}}, {2, false, {"A"}}, {72, false, {"A"}}, {1, true, {"B"}}, {5, true, {"A"}}, {8, true, {"A"}}, {1, true, {"A"}}};
 
 	auto query_b = from (source_b).where (
 		param (&test_struct::id)
