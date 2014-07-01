@@ -34,15 +34,15 @@ namespace lincxx {
 		struct list_handle {
 
 			using value_type = typename list_type::value_type;
-			using iterator = typename list_type::iterator;
+			using const_iterator = typename list_type::const_iterator;
 
-			list_type & data;
+			const list_type & data;
 
-			inline typename list_type::iterator begin () {
+			inline typename list_type::const_iterator begin () const {
 				return data.begin ();
 			}
 
-			inline typename list_type::iterator end () {
+			inline typename list_type::const_iterator end () const {
 				return data.end ();
 			}
 
@@ -52,7 +52,7 @@ namespace lincxx {
 		struct array_handle {
 
 			using value_type = item_type;
-			using iterator = item_type*;
+			using const_iterator = item_type*;
 
 			item_type * data;
 
@@ -242,7 +242,7 @@ namespace lincxx {
 	// ---------
 	namespace details {
 
-		struct or_evaluator {
+		struct or_op_eval {
 
 			template < class this_type, class item_type >
 			inline static bool evaluate (this_type & this_inst, item_type & item) {
@@ -255,16 +255,16 @@ namespace lincxx {
 		};
 
 		template < class lhe_type, class rhe_type >
-		using or = binary_oper < lhe_type, rhe_type, or_evaluator >;
+		using or_op = binary_oper < lhe_type, rhe_type, or_op_eval >;
 
 		template < class lhe_type, class rhe_type >
-		inline or < lhe_type, rhe_type > operator || (const lhe_type & l, const rhe_type & r) {
+		inline or_op < lhe_type, rhe_type > operator || (const lhe_type & l, const rhe_type & r) {
 			return{l, r};
 		}
 
 		// ------------------------------------------------------------------------------------
 
-		struct and_evaluator {
+		struct and_op_eval {
 
 			template < class this_type, class item_type >
 			inline static bool evaluate (this_type & this_inst, item_type & item) {
@@ -278,16 +278,16 @@ namespace lincxx {
 
 
 		template < class lhe_type, class rhe_type >
-		using and = lincxx::details::binary_oper < lhe_type, rhe_type, and_evaluator >;
+		using and_op = lincxx::details::binary_oper < lhe_type, rhe_type, and_op_eval >;
 
 		template < class lhe_type, class rhe_type >
-		inline and < lhe_type, rhe_type > operator && (const lhe_type & l, const rhe_type & r) {
+		inline and_op < lhe_type, rhe_type > operator && (const lhe_type & l, const rhe_type & r) {
 			return{l, r};
 		}
 
 		// ------------------------------------------------------------------------------------
 
-		struct equals_evaluator {
+		struct eq_op_eval {
 
 			template < class this_type, class item_type >
 			inline static bool evaluate (this_type & this_inst, item_type & item) {
@@ -300,11 +300,11 @@ namespace lincxx {
 		};
 
 		template < class lhe_type, class rhe_type >
-		using equals = binary_oper < lhe_type, rhe_type, equals_evaluator >;
+		using eq_op = binary_oper < lhe_type, rhe_type, eq_op_eval >;
 
 		template < class lhe_type, class rhe_type >
 		inline
-			equals <
+			eq_op <
 			typename details::param_traits < lhe_type >::type,
 			typename details::param_traits < rhe_type >::type
 			>
@@ -314,7 +314,7 @@ namespace lincxx {
 
 		// ------------------------------------------------------------------------------------
 
-		struct greater_evaluator {
+		struct gr_op_eval {
 
 			template < class this_type, class item_type >
 			inline static bool evaluate (this_type & this_inst, item_type & item) {
@@ -327,11 +327,11 @@ namespace lincxx {
 		};
 
 		template < class lhe_type, class rhe_type >
-		using greater = binary_oper < lhe_type, rhe_type, greater_evaluator >;
+		using gr_op = binary_oper < lhe_type, rhe_type, gr_op_eval >;
 
 		template < class lhe_type, class rhe_type >
 		inline
-			greater <
+			gr_op <
 			typename details::param_traits < lhe_type >::type,
 			typename details::param_traits < rhe_type >::type
 			>
@@ -341,7 +341,7 @@ namespace lincxx {
 
 		// ------------------------------------------------------------------------------------
 
-		struct lesser_evaluator {
+		struct ls_op_eval {
 
 			template < class this_type, class item_type >
 			inline static bool evaluate (this_type & this_inst, item_type & item) {
@@ -354,11 +354,11 @@ namespace lincxx {
 		};
 
 		template < class lhe_type, class rhe_type >
-		using lesser = binary_oper < lhe_type, rhe_type, lesser_evaluator >;
+		using ls_op = binary_oper < lhe_type, rhe_type, ls_op_eval >;
 
 		template < class lhe_type, class rhe_type >
 		inline
-			lesser <
+			ls_op <
 			typename details::param_traits < lhe_type >::type,
 			typename details::param_traits < rhe_type >::type
 			>
@@ -386,10 +386,10 @@ namespace lincxx {
 			inline query_handle (const source_handle & src, const exp_type & exp) : _list (src), _exp (exp) {}
 
 			// define filtering iterator
-			class iterator;
-			friend class iterator;
+			class const_iterator;
+			friend class const_iterator;
 
-			struct iterator : public std::iterator < std::forward_iterator_tag, value_type > {
+			class const_iterator : public std::iterator < std::forward_iterator_tag, value_type > {
 			private:
 				const query_handle_type & _query;
 
@@ -406,29 +406,29 @@ namespace lincxx {
 
 			public:
 
-				typename source_handle::iterator
+				typename source_handle::const_iterator
 					source_it,
 					source_end;
 
-				inline iterator () {}
+				inline const_iterator () {}
 
-				inline iterator (
+				inline const_iterator (
 					const query_handle_type & ref_query,
-					const typename source_handle::iterator & v_it,
-					const typename source_handle::iterator & v_end
+					const typename source_handle::const_iterator & v_it,
+					const typename source_handle::const_iterator & v_end
 					) : _query (ref_query), source_it (v_it), source_end (v_end) {
 					search_first ();
 				}
 
-				inline iterator (const iterator & v) : _query (v._query), source_it (v.source_it), source_end (v.source_end) {}
+				inline const_iterator (const const_iterator & v) : _query (v._query), source_it (v.source_it), source_end (v.source_end) {}
 
-				inline iterator & operator ++ () {
+				inline const_iterator & operator ++ () {
 					search_next ();
 					return *this;
 				}
 
-				inline bool operator == (const iterator & v) { return source_it == v.source_it; }
-				inline bool operator != (const iterator & v) { return source_it != v.source_it; }
+				inline bool operator == (const const_iterator & v) { return source_it == v.source_it; }
+				inline bool operator != (const const_iterator & v) { return source_it != v.source_it; }
 
 				inline value_type & operator * () { return *source_it; }
 
@@ -436,8 +436,8 @@ namespace lincxx {
 
 			// ---------------------------------------------
 
-			inline iterator begin () { return iterator (*this, _list.begin (), _list.end ()); }
-			inline iterator end () { return iterator (*this, _list.end (), _list.end ()); }
+			inline const_iterator begin () const { return const_iterator (*this, _list.begin (), _list.end ()); }
+			inline const_iterator end () const { return const_iterator (*this, _list.end (), _list.end ()); }
 
 			template <
 				class lhe_type,
@@ -458,7 +458,7 @@ namespace lincxx {
 				);
 			}
 
-			inline std::list < value_type > to_list () {
+			inline std::list < value_type > to_list () const {
 				std::list < value_type > result;
 
 				for (auto i : *this)
@@ -468,7 +468,7 @@ namespace lincxx {
 			}
 
 			template < class callback_type >
-			inline void visit (callback_type & call) {
+			inline void visit (const callback_type & call) const {
 				for (auto i : *this)
 					call (i);
 			}
@@ -476,7 +476,12 @@ namespace lincxx {
 			// other tools
 			inline const size_t count () {
 				size_t c = 0;
-				for (auto i : *this)
+				
+				auto
+					it = begin (),
+					it_end = end ();
+				
+				for (; it != it_end; ++it)
 					++c;
 
 				return c;
@@ -517,9 +522,9 @@ namespace lincxx {
 				key_map keys;
 				std::list < value_type > ret;
 
-				key_map::const_iterator
+				typename key_map::const_iterator
 					map_it,
-					map_end = keys.cend ();
+					map_end = keys.end ();
 
 				for (auto i : *this) {
 
@@ -546,16 +551,16 @@ namespace lincxx {
 	template < class item_type, size_t array_size >
 	inline details::query_handle < details::array_handle < item_type, array_size > > from (item_type (&array_inst) [array_size]) {
 		return details::query_handle < details::array_handle < item_type, array_size > > {
-				{ &array_inst [0] },
-					details::null_expression::instance
+			{ &array_inst [0] },
+			details::null_expression::instance
 		};
 	}
 
 	template < class list_type >
-	inline details::query_handle < details::list_handle < list_type > > from (list_type & list) {
+	inline details::query_handle < details::list_handle < list_type > > from (const list_type & list) {
 		return details::query_handle < details::list_handle < list_type > > {
-				{list},
-					details::null_expression::instance
+			{ list },
+			details::null_expression::instance
 		};
 	}
 
