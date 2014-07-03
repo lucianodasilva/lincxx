@@ -101,12 +101,15 @@ namespace lincxx {
 
 		};
 
-		template < class val_type >
+		template < class type >
 		struct literal_param {
-			val_type val;
+
+			using value_type = type;
+
+			type val;
 
 			template < class item_type >
-			inline val_type get_value (item_type & item) const {
+			inline type get_value (item_type & item) const {
 				return val;
 			}
 		};
@@ -114,6 +117,8 @@ namespace lincxx {
 		template < class struct_type, class field_type >
 		struct field_param {
 
+
+			using value_type = field_type;
 			using address_type = field_type (struct_type::*);
 
 			address_type field_address;
@@ -127,6 +132,7 @@ namespace lincxx {
 		template < class struct_type, class method_type >
 		struct method_param {
 
+			using value_type = method_type;
 			using address_type = method_type (struct_type::*)();
 
 			address_type method_address;
@@ -201,7 +207,7 @@ namespace lincxx {
 
 		template < class t, class ... type_v >
 		struct tupel_element < 0, tupel < t, type_v ... > > {
-			using type = t;
+			using type = typename t::value_type;
 			using tupel_type = tupel < t, type_v ... >;
 		};
 
@@ -209,15 +215,42 @@ namespace lincxx {
 		struct tupel_element < i, tupel < t, type_v ... > > 
 			: public tupel_element < i - 1, tupel < type_v ... > > {};
 
-		template < class t, class ... type_v >
-		struct tupel < t, type_v ... > 
+		template < class param_t>
+		struct tupel < param_t > {
+
+			using this_type = tupel <param_t>;
+			using value_type = typename param_t::value_type;
+
+			value_type element;
+
+			inline tupel(value_type v) : element(v) {}
+
+			template < size_t index >
+			auto get() ->
+				typename tupel_element < index, this_type >::type
+			{
+				return ((typename tupel_element < index, this_type >::tupel_type)*this).element;
+			}
+
+			template < size_t index >
+			void set(typename tupel_element < index, this_type >::type )
+			{
+				((typename tupel_element < index, this_type >::tupel_type)*this).element = v;
+			}
+
+		};
+
+		template < class param_t, class ... type_v >
+		struct tupel < param_t, type_v ... >
 			: public tupel < type_v ... > {
 
-			using this_type = tupel < t, type_v ... > ;
+			using this_type = tupel < param_t, type_v ... >;
+			using value_type = typename param_t::value_type;
 
-			t element;
+			value_type element;
 
-			inline tupel (t v, type_v ... arg_v) 
+			template < class ... args_tv >
+			inline tupel(value_type v, args_tv ... arg_v)
 				: tupel < type_v ... > (arg_v ...), element (v) {}
 
 			template < size_t index >
@@ -373,17 +406,15 @@ namespace lincxx {
 	// ------------
 	namespace details {
 
-		template < class source_handle, class exp_type = null_expression >
+		template < class source_proxy_t, class value_type = typename source_proxy_t::value_type, class exp_type = null_expression >
 		struct query_handle {
 
-			using query_handle_type = query_handle < source_handle, exp_type >;
+			using this_type = query_handle < source_proxy_t, value_type, exp_type >;
 
-			using value_type = typename source_handle::value_type;
-
-			source_handle	_list;
+			source_proxy_t	_list;
 			exp_type		_exp;
 
-			inline query_handle (const source_handle & src, const exp_type & exp) : _list (src), _exp (exp) {}
+			inline query_handle (const source_proxy_t & src, const exp_type & exp) : _list (src), _exp (exp) {}
 
 			// define filtering iterator
 			class const_iterator;
@@ -391,7 +422,7 @@ namespace lincxx {
 
 			class const_iterator : public std::iterator < std::forward_iterator_tag, value_type > {
 			private:
-				const query_handle_type & _query;
+				const this_type & _query;
 
 				inline void search_first () {
 					while (source_it != source_end && !_query._exp.evaluate (*source_it))
@@ -406,16 +437,16 @@ namespace lincxx {
 
 			public:
 
-				typename source_handle::const_iterator
+				typename source_proxy_t::const_iterator
 					source_it,
 					source_end;
 
 				inline const_iterator () {}
 
 				inline const_iterator (
-					const query_handle_type & ref_query,
-					const typename source_handle::const_iterator & v_it,
-					const typename source_handle::const_iterator & v_end
+					const this_type & ref_query,
+					const typename source_proxy_t::const_iterator & v_it,
+					const typename source_proxy_t::const_iterator & v_end
 					) : _query (ref_query), source_it (v_it), source_end (v_end) {
 					search_first ();
 				}
@@ -444,18 +475,31 @@ namespace lincxx {
 				class rhe_type,
 				class eva_type
 			>
-			inline query_handle < source_handle, binary_oper < lhe_type, rhe_type, eva_type > > where (const binary_oper < lhe_type, rhe_type, eva_type > & exp) const {
-				return query_handle < source_handle, binary_oper < lhe_type, rhe_type, eva_type > > (
+			inline query_handle < source_proxy_t, value_type, binary_oper < lhe_type, rhe_type, eva_type > > where (const binary_oper < lhe_type, rhe_type, eva_type > & exp) const {
+				return query_handle < source_proxy_t, value_type, binary_oper < lhe_type, rhe_type, eva_type > >(
 					_list,
 					exp
 				);
 			}
 
-			inline query_handle < source_handle, lambda_expression < value_type > > where (const std::function < bool (value_type &) > & exp) const {
-				return query_handle < source_handle, lambda_expression < value_type > > (
+			inline query_handle < source_proxy_t, value_type, lambda_expression < value_type > > where(const std::function < bool(value_type &) > & exp) const {
+				return query_handle < source_proxy_t, value_type, lambda_expression < value_type > >(
 					_list,
 					lambda_expression < value_type > (exp)
 				);
+			}
+
+			template < class ... param_v >
+			auto select(param_v ... arg_v)
+				->query_handle <
+				source_proxy_t,
+				tupel < typename source_proxy_t::value_type, param_v ... >,
+				exp_type
+			> {
+				return{
+					_list,
+					_exp
+				};
 			}
 
 			inline std::list < value_type > to_list () const {
@@ -536,12 +580,6 @@ namespace lincxx {
 				}
 
 				return ret;
-			}
-
-			template < class ... param_tv >
-			query_handle < source_handle, exp_type > select (param_tv ... arg_v) {
-
-				return *this;
 			}
 
 		};
