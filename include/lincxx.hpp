@@ -210,42 +210,46 @@ namespace lincxx {
 		struct null_transform {
 
 			using value_type = type;
+			using return_type = value_type &;
 
 			template < class t >
-			inline value_type & transform(t & v) const { return v; }
+			inline return_type transform(t & v) const { return v; }
 
 		};
 
 		template < class ... param_t_v >
 		struct tuple_transform {
-		
+
 			using value_type = std::tuple <
 				typename extract_param < param_t_v >::type...
 			>;
+
+			using return_type = value_type;
+
+			template < size_t i >
+			struct foreach {			
+				template < class src_t >
+				inline static void copy (src_t & src, const std::tuple < param_t_v... > & params, value_type & dst) {
+					std::get < i - 1 > (dst) =
+						std::get < i - 1 > (params).get_value (src);
+					foreach < i - 1 >::copy (src, params, dst);
+				}
+			};
+
+			template <>
+			struct foreach < 0 > {
+				template < class src_t >
+				inline static void copy (src_t & src, const std::tuple < param_t_v... > & params, value_type & dst) {}
+			};
 		
 			std::tuple < param_t_v... > params;
-		
-			template < size_t i = 0, class t >
-			inline typename std::enable_if < 
-				i < sizeof...(param_t_v) 
-				>::type copy(t & src, value_type & dst) const
-			{
-				std::get < i >(dst) =
-					std::get < i >(params).get_value(src);
-				copy < i + 1, t >(src, dst);
-			}
-		
-			template < size_t i = 0, class t >
-			inline typename std::enable_if < 
-				i == sizeof...(param_t_v) 
-			>::type copy(t & src, value_type & dst) const {}
 		
 			inline tuple_transform(param_t_v ... args) : params(args...) {}
 		
 			template < class t >
-			inline value_type transform(t & src) const {
+			inline return_type transform(t & src) const {
 				value_type target;
-				copy(src, target);
+				foreach < sizeof...(param_t_v) >::copy(src, params, target);
 				return target;
 			}
 		
@@ -458,7 +462,7 @@ namespace lincxx {
 				inline bool operator == (const const_iterator & v) { return source_it == v.source_it; }
 				inline bool operator != (const const_iterator & v) { return source_it != v.source_it; }
 			
-				inline value_type & operator * () {
+				inline typename transform_type::return_type operator * () {
 					return _query._transform.transform(*source_it);
 				}
 			
@@ -496,10 +500,10 @@ namespace lincxx {
 				tuple_transform < param_t_v... >, 
 				exp_type 
 			> select (param_t_v ... param_v) const {
-				return{
+				return {
 					_list,
 					tuple_transform < param_t_v... >(param_v...),
-					_exception
+					_exp
 				};
 			}
 
