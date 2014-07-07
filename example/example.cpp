@@ -34,8 +34,10 @@ int main (int arg_c, char **arg_v) {
 	auto id_d = param (&test_struct::id);
 	auto select_d = param(&test_struct::select);
 
-	for (auto v : from(source_b).select (id_d)) {
-		std::cout << std::get < 0 >(v);
+	for (auto v : from(source_b).select (id_d, select_d, param (6))) {
+		std::cout << std::get < 0 >(v) << " - ";
+		std::cout << std::get < 1 >(v);
+		std::cout << std::endl;
 	}
 
 	// simple filter example:

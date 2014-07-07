@@ -226,18 +226,18 @@ namespace lincxx {
 
 			using return_type = value_type;
 
-			template < size_t i >
-			struct foreach {			
+			template < size_t i = 0 >
+			struct foreach_element {			
 				template < class src_t >
 				inline static void copy (src_t & src, const std::tuple < param_t_v... > & params, value_type & dst) {
-					std::get < i - 1 > (dst) =
-						std::get < i - 1 > (params).get_value (src);
-					foreach < i - 1 >::copy (src, params, dst);
+					std::get < i> (dst) =
+						std::get < i > (params).get_value (src);
+					foreach_element < i + 1 >::copy(src, params, dst);
 				}
 			};
 
 			template <>
-			struct foreach < 0 > {
+			struct foreach_element < sizeof...(param_t_v) > {
 				template < class src_t >
 				inline static void copy (src_t & src, const std::tuple < param_t_v... > & params, value_type & dst) {}
 			};
@@ -249,7 +249,7 @@ namespace lincxx {
 			template < class t >
 			inline return_type transform(t & src) const {
 				value_type target;
-				foreach < sizeof...(param_t_v) >::copy(src, params, target);
+				foreach_element<>::copy(src, params, target);
 				return target;
 			}
 		
