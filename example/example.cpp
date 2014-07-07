@@ -85,6 +85,7 @@ int main (int arg_c, char **arg_v) {
 	// first or default
 	query_e.first_or_default ({0});
 	query_e.first_or_default ({0}, id > 3);
+	query_e.first_or_default ({0}, [](test_struct & i) { return i.id > 3 && i.ref.x == "A"; });
 
 	query_e.count ();
 
