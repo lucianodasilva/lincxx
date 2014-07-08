@@ -26,7 +26,7 @@ namespace lincxx {
 			rhe_type right;
 
 			template < class item_type >
-			inline bool evaluate (item_type & t) const { return eva_type::evaluate (*this, t); }
+			inline bool evaluate (const item_type & t) const { return eva_type::evaluate (*this, t); }
 
 		};
 
@@ -62,26 +62,20 @@ namespace lincxx {
 		};
 
 		struct null_expression {
-
-			static null_expression instance;
-
 			template < class item_type >
-			inline bool evaluate (item_type & item) const { return true; }
-
+			inline bool evaluate (const item_type & item) const { return true; }
 		};
-
-		null_expression null_expression::instance;
 
 		template < class value_type > 
 		struct lambda_expression {
 
-			std::function < bool (value_type &) > exp;
+			std::function < bool (const value_type &) > exp;
 
 			inline lambda_expression (const lambda_expression < value_type > & v ) : exp (v.exp) {}
-			inline lambda_expression (const std::function < bool (value_type &) > & e) : exp (e) {}
+			inline lambda_expression (const std::function < bool (const value_type &) > & e) : exp (e) {}
 
 			template < class item_type >
-			inline bool evaluate (item_type & item) const { return exp (item); }
+			inline bool evaluate (const item_type & item) const { return exp (item); }
 
 		};
 
@@ -95,7 +89,7 @@ namespace lincxx {
 		struct item_param {
 
 			template < class item_type >
-			inline item_type get_value (item_type & item) const {
+			inline item_type get_value (const item_type & item) const {
 				return item;
 			}
 
@@ -106,7 +100,7 @@ namespace lincxx {
 			val_type val;
 
 			template < class item_type >
-			inline val_type get_value (item_type & item) const {
+			inline const val_type & get_value (const item_type & item) const {
 				return val;
 			}
 		};
@@ -118,7 +112,7 @@ namespace lincxx {
 
 			address_type field_address;
 
-			inline field_type get_value (struct_type & item) const {
+			inline const field_type & get_value (const struct_type & item) const {
 				return (item.*field_address);
 			}
 
@@ -131,7 +125,7 @@ namespace lincxx {
 
 			address_type method_address;
 
-			inline method_type get_value (struct_type & item) const {
+			inline const method_type & get_value (const struct_type & item) const {
 				return (item.*method_address) ();
 			}
 
@@ -181,6 +175,7 @@ namespace lincxx {
 
 	}
 
+	
 	details::item_param item;
 
 	template < class type >
@@ -196,7 +191,7 @@ namespace lincxx {
 		struct or_op_eval {
 
 			template < class this_type, class item_type >
-			inline static bool evaluate (this_type & this_inst, item_type & item) {
+			inline static bool evaluate (const this_type & this_inst, const item_type & item) {
 				return
 					this_inst.left.evaluate (item)
 					||
@@ -218,7 +213,7 @@ namespace lincxx {
 		struct and_op_eval {
 
 			template < class this_type, class item_type >
-			inline static bool evaluate (this_type & this_inst, item_type & item) {
+			inline static bool evaluate (const this_type & this_inst, const item_type & item) {
 				return
 					this_inst.left.evaluate (item)
 					&&
@@ -241,7 +236,7 @@ namespace lincxx {
 		struct eq_op_eval {
 
 			template < class this_type, class item_type >
-			inline static bool evaluate (this_type & this_inst, item_type & item) {
+			inline static bool evaluate (const this_type & this_inst, const item_type & item) {
 				return
 					this_inst.left.get_value (item)
 					==
@@ -268,7 +263,7 @@ namespace lincxx {
 		struct gr_op_eval {
 
 			template < class this_type, class item_type >
-			inline static bool evaluate (this_type & this_inst, item_type & item) {
+			inline static bool evaluate (const this_type & this_inst, const item_type & item) {
 				return
 					this_inst.left.get_value (item)
 					>
@@ -295,7 +290,7 @@ namespace lincxx {
 		struct ls_op_eval {
 
 			template < class this_type, class item_type >
-			inline static bool evaluate (this_type & this_inst, item_type & item) {
+			inline static bool evaluate (const this_type & this_inst, const item_type & item) {
 				return
 					this_inst.left.get_value (item)
 					<
@@ -381,7 +376,7 @@ namespace lincxx {
 				inline bool operator == (const const_iterator & v) { return source_it == v.source_it; }
 				inline bool operator != (const const_iterator & v) { return source_it != v.source_it; }
 
-				inline value_type & operator * () { return *source_it; }
+				inline const value_type & operator * () { return *source_it; }
 
 			};
 
@@ -402,7 +397,7 @@ namespace lincxx {
 				);
 			}
 
-			inline query_handle < source_handle, lambda_expression < value_type > > where (const std::function < bool (value_type &) > & exp) const {
+			inline query_handle < source_handle, lambda_expression < value_type > > where (const std::function < bool (const value_type &) > & exp) const {
 				return query_handle < source_handle, lambda_expression < value_type > > (
 					_list,
 					lambda_expression < value_type > (exp)
@@ -465,7 +460,7 @@ namespace lincxx {
 				return default_value;
 			}
 
-			inline const value_type & first_or_default(const value_type & default_value, const std::function < bool(value_type &) > & exp) {
+			inline const value_type & first_or_default(const value_type & default_value, const std::function < bool(const value_type &) > & exp) {
 					auto
 						it = begin(),
 						it_end = end();
@@ -510,7 +505,7 @@ namespace lincxx {
 	inline details::query_handle < details::array_handle < item_type, array_size > > from (item_type (&array_inst) [array_size]) {
 		return details::query_handle < details::array_handle < item_type, array_size > > {
 			{ &array_inst [0] },
-			details::null_expression::instance
+			{}
 		};
 	}
 
@@ -518,7 +513,7 @@ namespace lincxx {
 	inline details::query_handle < details::list_handle < list_type > > from (const list_type & list) {
 		return details::query_handle < details::list_handle < list_type > > {
 			{ list },
-			details::null_expression::instance
+			{}
 		};
 	}
 

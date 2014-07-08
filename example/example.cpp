@@ -16,8 +16,6 @@ struct test_struct {
 	test_struct_deep ref;
 
 	inline int calculate_stuffs () { return id * 2; }
-
-
 };
 
 int main (int arg_c, char **arg_v) {
@@ -67,7 +65,7 @@ int main (int arg_c, char **arg_v) {
 
 	// you can also send a visitor anonymous function to browse through the 
 	// condition's compliant items
-	from (source_b).where (id < 10).visit ([](test_struct i) { std::cout << i.id << std::endl; });
+	from (source_b).where (id < 10).visit ([]( const test_struct & i) { std::cout << i.id << std::endl; });
 
 	// if a copy of results is desired
 	// just use the to_list function
@@ -78,14 +76,14 @@ int main (int arg_c, char **arg_v) {
 	// if the condition expression needs to be more complex than supported
 	// for example requiring the access to fields of fields you can use an anonymous function
 	// that takes in item as parameter and returns a boolean 
-	auto query_e = from (source_b).where ([](test_struct & i) {
+	auto query_e = from (source_b).where ([](const test_struct & i) {
 		return i.id < 10 && i.ref.x != "A";
 	});
 
 	// first or default
 	query_e.first_or_default ({0});
 	query_e.first_or_default ({0}, id > 3);
-	query_e.first_or_default ({0}, [](test_struct & i) { return i.id > 3 && i.ref.x == "A"; });
+	query_e.first_or_default ({0}, [](const test_struct & i) { return i.id > 3 && i.ref.x == "A"; });
 
 	query_e.count ();
 
