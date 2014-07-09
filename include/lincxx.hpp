@@ -126,11 +126,11 @@ namespace lincxx {
 					const query_type & ref_query,
 					const source_iterator_type & v_it,
 					const source_iterator_type & v_end
-					) : _query(ref_query), source_it(v_it), source_end(v_end) {
+				) : source_it(v_it), source_end(v_end), _query(ref_query) {
 					search_first();
 				}
 
-				inline iterator_base(const iterator_base < source_iterator_type > & v) : _query(v._query), source_it(v.source_it), source_end(v.source_end) {}
+				inline iterator_base(const iterator_base < source_iterator_type > & v) : source_it(v.source_it), source_end(v.source_end), _query(v._query) {}
 
 				inline iterator_base < source_iterator_type > & operator ++ () {
 					search_next();
@@ -246,7 +246,7 @@ namespace lincxx {
 				using key_map = std::map < value_type, int, comparer >;
 
 				key_map keys;
-				std::list < value_type > ret;
+				list_type ret;
 
 				typename key_map::const_iterator
 					map_it,
@@ -276,7 +276,7 @@ namespace lincxx {
 	from(source_type & source)
 	{
 		return{
-			source, // list source
+			{ source }, // list source
 			details::null_expression <
 			typename details::source_proxy < source_type >::value_type
 			>()
