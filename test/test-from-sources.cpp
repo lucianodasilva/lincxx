@@ -88,3 +88,19 @@ TEST_F(test_from_sources, from_vector_fundamental_type) {
 
 	EXPECT_EQ(source_vector_int.size (), query_count);
 }
+
+TEST_F(test_from_sources, from_query) {
+	using namespace lincxx;
+
+	auto query_a = from(source_vector_int);
+	auto query_b = from(query_a);
+
+	size_t query_count = 0;
+
+	for (auto v : query_b) {
+		EXPECT_EQ(v, source_vector_int[query_count]);
+		++query_count;
+	}
+
+	EXPECT_EQ(source_vector_int.size(), query_count);
+}

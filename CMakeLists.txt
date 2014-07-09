@@ -61,5 +61,12 @@ if ( LINCXX_UNIT )
 	
 	add_executable ( tests ${UNIT_TESTS_SOURCE} )
 	target_link_libraries ( tests gtest gtest_main )
-
+	
+	
+	set_property (GLOBAL PROPERTY USE_FOLDERS ON)
+	
+	set_target_properties (tests PROPERTIES FOLDER "Tests")
+	set_target_properties (gtest PROPERTIES FOLDER "Tests")
+	set_target_properties (gtest_main PROPERTIES FOLDER "Tests")
+	
 endif ()
