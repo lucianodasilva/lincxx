@@ -23,11 +23,31 @@ namespace lincxx {
 			using iterator = typename source_type::iterator;
 			using const_iterator = typename source_type::const_iterator;
 
+			inline source_proxy(source_type & source_ref) : source(source_ref) {}
+
 			inline iterator begin() { return source.begin(); }
-			inline const_iterator begin() const { return source.begin(); }
+			inline const_iterator begin() const { return source.cbegin(); }
 
 			inline iterator end() { return source.end(); }
-			inline const_iterator end() const { return source.end(); }
+			inline const_iterator end() const { return source.cend(); }
+
+		};
+
+		template < class source_type >
+		struct source_proxy < const source_type > {
+
+			const source_type & source;
+
+			using value_type = typename source_type::value_type;
+
+			using iterator = typename source_type::iterator;
+			using const_iterator = typename source_type::const_iterator;
+
+			inline source_proxy(const source_type & source_ref) : source(source_ref) {}
+
+			inline const_iterator begin() const { return source.cbegin(); }
+
+			inline const_iterator end() const { return source.cend(); }
 
 		};
 
@@ -41,11 +61,13 @@ namespace lincxx {
 
 			item_type * source;
 
-			inline iterator begin() { return source; }
-			inline const_iterator begin() const { return source; }
+			inline source_proxy(item_type(&source_ref)[array_size]) : source (+source_ref) {}
 
-			inline iterator end() { return source + array_size; }
-			inline const_iterator end() const { return source + array_size; }
+			inline iterator begin() { return +source; }
+			inline const_iterator begin() const { return +source; }
+
+			inline iterator end() { return +source + array_size; }
+			inline const_iterator end() const { return +source + array_size; }
 
 		};
 
@@ -105,17 +127,18 @@ namespace lincxx {
 					source_end;
 
 			private:
-				const query_type & _query;
+				
+				const condition_type & condition;
 
 				inline void search_first() const {
-					while (source_it != source_end && !_query._condition(*source_it))
+					while (source_it != source_end && !condition(*source_it))
 						++source_it;
 				}
 
 				inline void search_next() const {
 					do
 						++source_it;
-					while (source_it != source_end && !_query._condition(*source_it));
+					while (source_it != source_end && !condition(*source_it));
 				}
 
 			public:
@@ -123,14 +146,14 @@ namespace lincxx {
 				inline iterator_base() {}
 
 				inline iterator_base(
-					const query_type & ref_query,
-					const source_iterator_type & v_it,
-					const source_iterator_type & v_end
-				) : source_it(v_it), source_end(v_end), _query(ref_query) {
+					const condition_type & cexp,
+					const source_iterator_type & it,
+					const source_iterator_type & it_end
+				) : source_it(it), source_end(it_end), condition (cexp) {
 					search_first();
 				}
 
-				inline iterator_base(const iterator_base < source_iterator_type > & v) : source_it(v.source_it), source_end(v.source_end), _query(v._query) {}
+				inline iterator_base(const iterator_base < source_iterator_type > & v) : source_it(v.source_it), source_end(v.source_end), condition(v.condition) {}
 
 				inline iterator_base < source_iterator_type > & operator ++ () {
 					search_next();
@@ -151,34 +174,42 @@ namespace lincxx {
 
 			inline iterator begin() {
 				return iterator(
-					*this,
+					_condition,
 					_source.begin(),
 					_source.end()
-					);
+				);
 			}
 
 			inline iterator end() {
 				return iterator(
-					*this,
+					_condition,
 					_source.end(),
 					_source.end()
-					);
+				);
 			}
 
 			inline const_iterator begin() const {
 				return const_iterator(
-					*this,
+					_condition,
 					_source.begin(),
 					_source.end()
-					);
+				);
 			}
 
 			inline const_iterator end() const {
 				return const_iterator(
-					*this,
+					_condition,
 					_source.end(),
 					_source.end()
-					);
+				);
+			}
+
+			inline const_iterator cbegin() const {
+				return begin();
+			}
+
+			inline const_iterator cend() const {
+				return end();
 			}
 
 			template < class exp_type >
@@ -276,7 +307,7 @@ namespace lincxx {
 	from(source_type & source)
 	{
 		return{
-			{ source }, // list source
+			details::source_proxy < source_type > ( source ), // list source
 			details::null_expression <
 			typename details::source_proxy < source_type >::value_type
 			>()

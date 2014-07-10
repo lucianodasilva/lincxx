@@ -44,13 +44,15 @@ int main (int arg_c, char **arg_v) {
 	// since the query is iterable
 	// it can be used as source for another query (nesting)
 	auto query_b =
-		from (
+		from(
 			from(source_b).where(
 				[](const test_struct & i) { return i.id < 10; }
 			)
 		).where(
-			[](const test_struct & i) { return i.id < 5; }
+			[](const test_struct & i) { return i.id > 5; }
 		);
+
+	query_b.visit([](const test_struct & i) { std::cout << i.id << " "; });
 
 	// you can also send a visitor anonymous function to browse through the 
 	// condition's compliant items
