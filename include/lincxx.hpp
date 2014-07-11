@@ -21,15 +21,12 @@ namespace lincxx {
 			using value_type = typename source_type::value_type;
 
 			using iterator = typename source_type::iterator;
-			using const_iterator = typename source_type::const_iterator;
 
 			inline source_proxy(source_type & source_ref) : source(source_ref) {}
 
-			inline iterator begin() { return source.begin(); }
-			inline const_iterator begin() const { return source.cbegin(); }
+			inline iterator begin() const { return source.begin(); }
 
-			inline iterator end() { return source.end(); }
-			inline const_iterator end() const { return source.cend(); }
+			inline iterator end() const { return source.end(); }
 
 		};
 
@@ -40,14 +37,13 @@ namespace lincxx {
 
 			using value_type = typename source_type::value_type;
 
-			using iterator = typename source_type::iterator;
-			using const_iterator = typename source_type::const_iterator;
+			using iterator = typename source_type::const_iterator;
 
 			inline source_proxy(const source_type & source_ref) : source(source_ref) {}
 
-			inline const_iterator begin() const { return source.cbegin(); }
+			inline iterator begin() const { return source.cbegin(); }
 
-			inline const_iterator end() const { return source.cend(); }
+			inline iterator end() const { return source.cend(); }
 
 		};
 
@@ -57,23 +53,20 @@ namespace lincxx {
 			using value_type = item_type;
 
 			using iterator = item_type*;
-			using const_iterator = const item_type *;
 
 			item_type * source;
 
 			inline source_proxy(item_type(&source_ref)[array_size]) : source (+source_ref) {}
 
-			inline iterator begin() { return +source; }
-			inline const_iterator begin() const { return +source; }
+			inline iterator begin() const { return +source; }
 
-			inline iterator end() { return +source + array_size; }
-			inline const_iterator end() const { return +source + array_size; }
+			inline iterator end() const { return +source + array_size; }
 
 		};
 
 		template < class item_type >
 		struct null_expression {
-			inline bool operator ()(item_type & i) const { return true; }
+			inline bool operator ()(const item_type & i) const { return true; }
 		};
 
 		template < class t >
@@ -118,11 +111,10 @@ namespace lincxx {
 			template < class source_iterator >
 			friend class iterator_base;
 
-			template < class source_iterator_type >
-			class iterator_base : public std::iterator < std::forward_iterator_tag, value_type > {
+			class iterator : public std::iterator < std::forward_iterator_tag, value_type > {
 			public:
 
-				mutable source_iterator_type
+				mutable typename source_proxy_type::iterator
 					source_it,
 					source_end;
 
@@ -143,44 +135,41 @@ namespace lincxx {
 
 			public:
 
-				inline iterator_base() {}
+				inline iterator() {}
 
-				inline iterator_base(
+				inline iterator(
 					const condition_type & cexp,
-					const source_iterator_type & it,
-					const source_iterator_type & it_end
+					const typename source_proxy_type::iterator & it,
+					const typename source_proxy_type::iterator & it_end
 				) : source_it(it), source_end(it_end), condition (cexp) {
 					search_first();
 				}
 
-				inline iterator_base(const iterator_base < source_iterator_type > & v) : source_it(v.source_it), source_end(v.source_end), condition(v.condition) {}
+				inline iterator(const iterator & v) : source_it(v.source_it), source_end(v.source_end), condition(v.condition) {}
 
-				inline iterator_base < source_iterator_type > & operator ++ () {
+				inline iterator & operator ++ () {
 					search_next();
 					return *this;
 				}
 
-				inline bool operator == (const iterator_base < source_iterator_type >& v) const { return source_it == v.source_it; }
-				inline bool operator != (const iterator_base < source_iterator_type > & v) const { return source_it != v.source_it; }
+				inline bool operator == (const iterator & v) const { return source_it == v.source_it; }
+				inline bool operator != (const iterator & v) const { return source_it != v.source_it; }
 
 				inline auto operator * () -> decltype (*source_it) { return *source_it; }
 
 			};
 
-			using iterator = iterator_base < typename source_proxy_type::iterator >;
-			using const_iterator = iterator_base < typename source_proxy_type::const_iterator >;
-
 			// ---------------------------------------------
 
-			inline iterator begin() {
-				return iterator(
+			inline iterator begin() const {
+				return iterator (
 					_condition,
 					_source.begin(),
 					_source.end()
 				);
 			}
 
-			inline iterator end() {
+			inline iterator end() const {
 				return iterator(
 					_condition,
 					_source.end(),
@@ -188,27 +177,11 @@ namespace lincxx {
 				);
 			}
 
-			inline const_iterator begin() const {
-				return const_iterator(
-					_condition,
-					_source.begin(),
-					_source.end()
-				);
-			}
-
-			inline const_iterator end() const {
-				return const_iterator(
-					_condition,
-					_source.end(),
-					_source.end()
-				);
-			}
-
-			inline const_iterator cbegin() const {
+			inline iterator cbegin() const {
 				return begin();
 			}
 
-			inline const_iterator cend() const {
+			inline iterator cend() const {
 				return end();
 			}
 
