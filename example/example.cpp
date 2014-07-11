@@ -2,6 +2,7 @@
 #include <vector>	   
 #include <iostream>
 #include <string>
+#include <tuple>
 
 using namespace lincxx;
 
@@ -91,4 +92,32 @@ int main (int arg_c, char **arg_v) {
 	auto dist = from(source_a).where(
 		[](const int & i) { return i < 10; }
 	).distinct();
+
+	// type transformations
+	auto transforming_query =
+		from(source_b).where(
+			[](const test_struct & i) { return i.id < 5; }
+		).select(
+			&test_struct::id,
+			&test_struct::select
+		);
+
+	for (auto v : transforming_query) {
+		auto id = std::get < 0 >(v);
+		auto sel = std::get < 1 >(v);
+	}
+
+	auto transforming_query_b =
+		from(source_b).where(
+			[](const test_struct & i) { return i.id < 5; }
+		).select(
+			&test_struct::id
+		);
+
+	for (auto v : transforming_query_b) {
+		std::cout << v << std::endl;
+	}
+
+	int id_sum = from(source_b).select(&test_struct::id).sum();
+
 }
