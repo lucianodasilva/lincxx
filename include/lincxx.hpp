@@ -32,19 +32,19 @@ namespace lincxx {
 
 		template < class source_type >
 		struct source_proxy < const source_type > {
-
+		
 			const source_type & source;
-
+		
 			using value_type = typename source_type::value_type;
-
+		
 			using iterator = typename source_type::const_iterator;
-
+		
 			inline source_proxy(const source_type & source_ref) : source(source_ref) {}
-
+		
 			inline iterator begin() const { return source.cbegin(); }
-
+		
 			inline iterator end() const { return source.cend(); }
-
+		
 		};
 
 		template < class item_type, size_t array_size >
@@ -147,6 +147,20 @@ namespace lincxx {
 			using class_type = typename t::class_type;
 		};
 
+		template < size_t i, class class_type, class value_type, class ... accessor_types >
+		struct tuple_for_each {
+			inline static void copy(const class_type & src, const std::tuple < accessor_types... > & accessors, value_type & dst) {
+				std::get < i - 1 >(dst) =
+					std::get < i - 1 >(accessors).get(src);
+				tuple_for_each  < i - 1, class_type, value_type, accessor_types ... >::copy(src, accessors, dst);
+			}
+		};
+
+		template <class class_type, class value_type, class ... accessor_types >
+		struct tuple_for_each < 0, class_type, value_type, accessor_types ... > {
+			inline static void copy(const class_type & src, const std::tuple < accessor_types... > & accessors, value_type & dst) {}
+		};
+
 		template < class ... accessor_types >
 		struct transformer {
 
@@ -156,27 +170,13 @@ namespace lincxx {
 
 			using class_type = typename extract_accessor_class < accessor_types ... >::class_type;
 
-			template < size_t i >
-			struct foreach {
-				inline static void copy(const class_type & src, const std::tuple < accessor_types... > & accessors, value_type & dst) {
-					std::get < i - 1 >(dst) =
-						std::get < i - 1 >(accessors).get(src);
-					foreach < i - 1 >::copy(src, accessors, dst);
-				}
-			};
-
-			template <>
-			struct foreach < 0 > {
-				inline static void copy(const class_type & src, const std::tuple < accessor_types... > & accessors, value_type & dst) {}
-			};
-
 			std::tuple < accessor_types ... > accessor_instances;
 
 			inline transformer(accessor_types ... accessors) : accessor_instances(accessors...) {}
 
 			inline value_type transform(const class_type & src) const {
 				value_type dst;
-				foreach < sizeof...(accessor_types) >::copy(src, accessor_instances, dst);
+				tuple_for_each < sizeof...(accessor_types), class_type, value_type, accessor_types ... >::copy(src, accessor_instances, dst);
 				return dst;
 			}
 
@@ -279,8 +279,9 @@ namespace lincxx {
 				inline value_type operator * (){ return query._transformer.transform (*source_it); }
 
 			};
-
 			// ---------------------------------------------
+
+			using const_iterator = iterator;
 
 			inline iterator begin() const {
 				return iterator (
@@ -298,11 +299,11 @@ namespace lincxx {
 				);
 			}
 
-			inline iterator cbegin() const {
+			inline const_iterator cbegin() const {
 				return begin();
 			}
 
-			inline iterator cend() const {
+			inline const_iterator cend() const {
 				return end();
 			}
 
@@ -311,7 +312,7 @@ namespace lincxx {
 				source_proxy_type,
 				lambda_ref < decltype (&exp_type::operator ()) >,
 				transformer_type
-			> where(exp_type expression)
+			> where(exp_type expression) const
 			{
 				return{
 					_source,
@@ -325,7 +326,7 @@ namespace lincxx {
 				source_proxy_type,
 				condition_type,
 				transformer < accessor < address_types > ... >
-			> select ( address_types ... accessors) {
+			> select ( address_types ... accessors) const {
 				return{
 					_source,
 					_condition,
@@ -349,10 +350,14 @@ namespace lincxx {
 					call(i);
 			}
 
-			inline const size_t size() {
+			inline size_t size() const {
 				size_t s = 0;
 
-				for (auto v : *this)
+				auto
+					it = begin(),
+					it_end = end();
+
+				for (; it != it_end; ++it)
 					++s;
 
 				return s;
@@ -369,7 +374,7 @@ namespace lincxx {
 				return res;
 			}
 
-			inline const value_type & first_or_default(const value_type & default_value) const {
+			inline value_type first_or_default(const value_type & default_value) const {
 				auto it = begin();
 
 				if (it != end())
@@ -379,7 +384,7 @@ namespace lincxx {
 			}
 
 			template < class expression_type >
-			inline const value_type & first_or_default(const value_type & default_value, expression_type expression) const {
+			inline value_type first_or_default(const value_type & default_value, expression_type expression) const {
 				auto
 					it = begin(),
 					it_end = end();
@@ -393,7 +398,7 @@ namespace lincxx {
 			}
 
 			template < class list_type = std::vector < value_type >, class comparer = std::less < value_type > >
-			inline list_type distinct() {
+			inline list_type distinct() const {
 				using key_map = std::map < value_type, int, comparer >;
 
 				key_map keys;
@@ -420,7 +425,7 @@ namespace lincxx {
 	}
 
 	template < class source_type >
-	details::query <
+	inline details::query <
 		details::source_proxy < source_type >,
 		details::null_expression < typename details::source_proxy < source_type >::value_type >,
 		details::null_transformer < typename details::source_proxy < source_type >::value_type >
@@ -434,6 +439,25 @@ namespace lincxx {
 			>(),
 			details::null_transformer < 
 				typename details::source_proxy < source_type >::value_type
+			>()
+		};
+	}
+
+	template < class source_type >
+	inline const details::query <
+		details::source_proxy < const source_type >,
+		details::null_expression < typename details::source_proxy < const source_type >::value_type >,
+		details::null_transformer < typename details::source_proxy < const source_type >::value_type >
+	>
+	from(const source_type & source)
+	{
+		return{
+			details::source_proxy < const source_type >(source), // list source
+			details::null_expression <
+				typename details::source_proxy < const source_type >::value_type
+			>(),
+			details::null_transformer <
+				typename details::source_proxy < const source_type >::value_type
 			>()
 		};
 	}

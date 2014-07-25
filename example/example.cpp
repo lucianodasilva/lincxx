@@ -85,7 +85,9 @@ int main (int arg_c, char **arg_v) {
 		[](const test_struct & i) { return i.id > 5; }
 	);
 
-	int size_value = query_b.size ();
+	size_t size_value = query_b.size ();
+
+	std::cout << "Size: " << size_value << std::endl;
 
 	// distinct returns a list of unique values within
 	// the filtered set
@@ -105,6 +107,8 @@ int main (int arg_c, char **arg_v) {
 	for (auto v : transforming_query) {
 		auto id = std::get < 0 >(v);
 		auto sel = std::get < 1 >(v);
+
+		std::cout << "ID: " << id << " SEL: " << sel << std::endl;
 	}
 
 	auto transforming_query_b =
@@ -119,5 +123,6 @@ int main (int arg_c, char **arg_v) {
 	}
 
 	int id_sum = from(source_b).select(&test_struct::id).sum();
+	std::cout << "id_sum: " << id_sum << std::endl;
 
 }
