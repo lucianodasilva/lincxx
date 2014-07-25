@@ -1,2 +1,0 @@
-d:/toolchains/mingw/bin/ar.exe cr libgtest.a  CMakeFiles/gtest.dir/src/gtest-all.cc.obj
-d:/toolchains/mingw/bin/ranlib.exe libgtest.a

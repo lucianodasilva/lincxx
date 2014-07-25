@@ -65,7 +65,7 @@ int main (int arg_c, char **arg_v) {
 
 	// if a copy of results is desired
 	// just use the to_list function
-	// this pushes all compliant items into a list < T > 
+	// this pushes all compliant items into a vector < T > 
 	// container
 	auto list_res = from (source_b).where (
 		[](const test_struct & i) { return i.id < 10; }
@@ -76,15 +76,21 @@ int main (int arg_c, char **arg_v) {
 	
 	// return the first value in the list
 	// in case the list is empty returns the supplied default value
-	first = query_b.first_or_default({ 0 });
+	first = query_b.first_or_default({0});
 
 	// first value compliant with the query that is also
 	// compliant with the condition parameter
 	first = query_b.first_or_default(
-		{ 0 }, 
+		{0}, 
 		[](const test_struct & i) { return i.id > 5; }
 	);
 
+	//  Size returns the number of items that exist
+	// in the source list that are compliant with
+	// the established filter.
+	//  Take into consideration that this forces
+	// the query to sweep through items to count
+	// them.
 	size_t size_value = query_b.size ();
 
 	std::cout << "Size: " << size_value << std::endl;
@@ -95,7 +101,11 @@ int main (int arg_c, char **arg_v) {
 		[](const int & i) { return i < 10; }
 	).distinct();
 
-	// type transformations
+	// You can transform the type of the 
+	// result of the running query.
+	// just select what members of the 
+	// source class you want to have 
+	// copied into the results
 	auto transforming_query =
 		from(source_b).where(
 			[](const test_struct & i) { return i.id < 5; }
@@ -111,6 +121,9 @@ int main (int arg_c, char **arg_v) {
 		std::cout << "ID: " << id << " SEL: " << sel << std::endl;
 	}
 
+	// if you choose to select a single member
+	// the returning type will be a copy 
+	// of the same type as the selected member
 	auto transforming_query_b =
 		from(source_b).where(
 			[](const test_struct & i) { return i.id < 5; }
@@ -118,11 +131,14 @@ int main (int arg_c, char **arg_v) {
 			&test_struct::id
 		);
 
+	// this way no tuple access is needed
 	for (auto v : transforming_query_b) {
 		std::cout << v << std::endl;
 	}
 
-	int id_sum = from(source_b).select(&test_struct::id).sum();
+	// if its possible to apply a sum operation (+) to the 
+	// selected type this is possible to execute a sum operation
+	int id_sum = from(source_b).select(&test_struct::id).sum ();
 	std::cout << "id_sum: " << id_sum << std::endl;
 
 }

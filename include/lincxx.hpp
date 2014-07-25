@@ -13,6 +13,18 @@ namespace lincxx {
 	// --------------
 	namespace details {
 
+		namespace tools {
+
+			template < class t >
+			struct add : public std::binary_function < t, t, t > {
+
+				inline t operator () (const t & v1, const t & v2) const {
+					return v1 + v2;
+				}
+			};
+
+		}
+
 		template < class source_type >
 		struct source_proxy {
 
@@ -84,13 +96,6 @@ namespace lincxx {
 
 			inline return_type operator () (p_v_type ... arg_v) const { return address(arg_v...); }
 
-		};
-
-		template < class t >
-		struct add : public std::binary_function < t, t, t > {
-			inline t operator () (const t & v1, const t & v2) const {
-				return v1 + v2;
-			}
 		};
 	}
 
@@ -363,7 +368,7 @@ namespace lincxx {
 				return s;
 			}
 
-			template < class addition = details::add < value_type > > 
+			template < class addition = details::tools::add < value_type > > 
 			typename addition::result_type sum() const {
 				typename addition::result_type res = typename addition::result_type();
 				addition adder;
