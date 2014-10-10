@@ -24,12 +24,17 @@ test_struct source_b[] = { { 2, true, { "A" } }, { 7, false, { "A" } }, { 12, fa
 
 const int const_source_a[] = { 8, 5, 7, 8, 2, 5, 6, 3, 3, 7, 2, 4, 1 };
 
+const std::vector < int > issue_source = {8, 5, 7, 8, 2, 5, 6, 3, 3, 7, 2, 4, 1};
+
 int main (int arg_c, char **arg_v) {
 
-	//for (int & i : from(source_a).where([](const int & i) { return i < 10; })) {
-	//	std::cout << i << std::endl;
-	//}
+	auto q = from (issue_source);
 
+	for (int i : q) {
+		std::cout << i << std::endl;
+	}
+
+	return 0;
 
 	// simple filter example:
 
@@ -40,12 +45,12 @@ int main (int arg_c, char **arg_v) {
 
 	// the filtering iterator then evaluates the conditional expression
 	// and returns only compliant values
-	for (auto i : query_a) {
+	for (int & i : query_a) {
 		std::cout << i << std::endl;
 	}
 
 	// could also have been writen literally into the for cicle
-	for (auto i : from(source_a).where([](const int & i){ return i < 5; })) {
+	for (int & i : from(source_a).where([](const int & i){ return i < 5; })) {
 		std::cout << i << std::endl;
 	}
 
