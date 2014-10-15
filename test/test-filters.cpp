@@ -101,7 +101,7 @@ inline void test_expression(source_type & source, expression & condition) {
 		if (res_index >= res_size)
 			GTEST_FAIL() << "Unexpected return value count!";
 
-		EXPECT_EQ(v, result[res_index]);
+		ASSERT_EQ(result[res_index], v);
 		++res_index;
 	}
 }

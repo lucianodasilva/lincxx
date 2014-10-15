@@ -77,5 +77,5 @@ TEST_F(test_transforms, transform_single_value_sum) {
 
 	int query_id_sum = transform_query.sum();
 
-	EXPECT_EQ(id_sum, query_id_sum);
+	ASSERT_EQ (id_sum, query_id_sum);
 }

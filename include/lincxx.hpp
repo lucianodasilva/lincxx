@@ -31,6 +31,8 @@ namespace lincxx {
 			using value_type = array_value_type;
 			using iterator = array_value_type *;
 			using const_iterator = const array_value_type *;
+			using reference = array_value_type &;
+			using const_reference = const array_value_type &;
 
 			array_value_type (& data) [array_size];
 
@@ -47,6 +49,8 @@ namespace lincxx {
 			using value_type = typename source_type::value_type;
 			using iterator = typename source_type::iterator;
 			using const_iterator = typename source_type::const_iterator;
+			using reference = typename source_type::reference;
+			using const_reference = typename source_type::const_reference;
 
 			source_type & data;
 
@@ -57,18 +61,22 @@ namespace lincxx {
 			inline const_iterator end () const { return data.end(); }
 		};
 
+		
 		template < class source_type >
 		struct list_handle < const source_type > {
 
 			using value_type = typename source_type::value_type;
-			using iterator = typename source_type::iterator;
+			using iterator = typename source_type::const_iterator;
 			using const_iterator = typename source_type::const_iterator;
+			using reference = typename source_type::const_reference;
+			using const_reference = typename source_type::const_reference;
 
 			const source_type & data;
 
 			inline const_iterator begin () const { return data.cbegin (); }
 			inline const_iterator end () const { return data.cend (); }
 		};
+		
 
 		// -------------------------------------------------------------------------------------
 		// Conditions and Lambda References
@@ -157,14 +165,15 @@ namespace lincxx {
 			inline static void copy(const class_type & src, const std::tuple < accessor_types... > & accessors, value_type & dst) {}
 		};
 		
-		template < class ... accessor_types >
+		template < class source_type, class ... accessor_types >
 		struct transformer {
-		
+
 			using value_type = std::tuple <
 				typename extract_accessor_type < accessor_types >::value_type ...
 			>;
 		
-			using iterator_value_type = value_type;
+			using reference = value_type;
+			using const_reference = value_type;
 		
 			using class_type = typename extract_accessor_class < accessor_types ... >::class_type;
 		
@@ -172,7 +181,7 @@ namespace lincxx {
 		
 			inline transformer(accessor_types ... accessors) : accessor_instances(accessors...) {}
 		
-			inline value_type transform(const class_type & src) const {
+			inline reference transform(const class_type & src) const {
 				value_type dst;
 				tuple_for_each < sizeof...(accessor_types), class_type, value_type, accessor_types ... >::copy(src, accessor_instances, dst);
 				return dst;
@@ -180,28 +189,31 @@ namespace lincxx {
 		
 		};
 		
-		template < class t >
-		struct transformer < t > {
+		template < class source_type, class t >
+		struct transformer < source_type,  t > {
 		
 			using value_type = typename extract_accessor_type < t >::value_type;
-			using iterator_value_type = value_type;
+			using reference = value_type;
+			using const_reference = value_type;
 			using class_type = typename extract_accessor_class < t >::class_type;
 		
 			t accessor;
 		
 			inline transformer(t v) : accessor(v) {}
 		
-			inline value_type transform(const class_type & src) const {
+			inline reference transform(const class_type & src) const {
 				return accessor.get(src);
 			}
 		
 		};
 		
-		template < class t >
+		template < class source_type >
 		struct null_transformer {
-			using value_type = t;
-			using iterator_value_type = t &;
-			inline iterator_value_type transform( iterator_value_type v) const { return v; }
+			using value_type = typename source_type::value_type;
+			using reference = typename source_type::reference;
+			using const_reference = typename source_type::const_reference;
+
+			inline reference transform( reference v) const { return v; }
 		};
 
 		// ----------------------
@@ -212,19 +224,6 @@ namespace lincxx {
 			class transformer_type
 		>
 		struct iterator {
-
-			inline void search_first () const {
-				while (source_it != source_end && !condition (*source_it))
-					++source_it;
-			}
-
-			inline void search_next () const {
-				do
-					++source_it;
-				while (source_it != source_end && !condition (*source_it));
-			}
-
-		public:
 
 			condition_type & condition;
 			transformer_type & transformer;
@@ -243,9 +242,24 @@ namespace lincxx {
 			inline bool operator == (const this_type & v) const { return source_it == v.source_it; }
 			inline bool operator != (const this_type & v) const { return source_it != v.source_it; }
 
-			inline typename transformer_type::iterator_value_type operator * () const
+			inline typename transformer_type::reference operator * () const
 			{
 				return transformer.transform (*source_it);
+			}
+
+			inline const this_type & search_first () const {
+				while (source_it != source_end && !condition (*source_it))
+					++source_it;
+
+				return *this;
+			}
+
+			inline const this_type & search_next () const {
+				do
+					++source_it;
+				while (source_it != source_end && !condition (*source_it));
+
+				return *this;
 			}
 
 		};
@@ -279,14 +293,18 @@ namespace lincxx {
 				transformer_type 
 			>;
 
+			using reference = typename transformer_type::reference;
+			using const_reference = typename transformer_type::const_reference;
+
 			inline iterator begin () {
-				return 
-				{
+				iterator new_it = {
 					condition,
 					transformer,
 					source.begin (),
 					source.end ()
 				};
+
+				return new_it.search_first ();
 			}
 
 			inline iterator end () {
@@ -299,16 +317,18 @@ namespace lincxx {
 			}
 
 			inline const_iterator begin () const {
-				return{
+				const_iterator new_it = {
 					condition,
 					transformer,
 					source.begin (),
 					source.end ()
 				};
+
+				return new_it.search_first ();
 			}
 
 			inline const_iterator end () const {
-				return{
+				return {
 					condition,
 					transformer,
 					source.end (),
@@ -335,14 +355,14 @@ namespace lincxx {
 			inline query < 
 				source_type,
 				condition_type,
-				details::transformer < accessor < address_types > ... >
+				details::transformer < source_type, accessor < address_types > ... >
 			>
 			select(address_types ... accessors) 
 			{
 				return{
 					source,
 					condition,
-					details::transformer < accessor < address_types > ... >(accessors...)
+					details::transformer < source_type, accessor < address_types > ... >(accessors...)
 				};
 			}
 
@@ -440,12 +460,12 @@ namespace lincxx {
 	inline details::query < 
 		details::array_handle < value_type, size >,
 		details::null_condition < value_type >,
-		details::null_transformer < value_type >
+		details::null_transformer < details::array_handle < value_type, size > >
 	> from (value_type (&v)[size]) {
-		return{
+		return {
 			details::array_handle < value_type, size > {v},
 			details::null_condition < value_type > (),
-			details::null_transformer < value_type > ()
+			details::null_transformer < details::array_handle < value_type, size > > ()
 		};
 	}
 
@@ -453,15 +473,14 @@ namespace lincxx {
 	inline details::query < 
 		details::list_handle < source_type >,
 		details::null_condition < typename source_type::value_type >,
-		details::null_transformer < typename source_type::value_type >
+		details::null_transformer < details::list_handle < source_type > >
 	> from (source_type & v) {
 		return {
 			details::list_handle < source_type > {v},
 			details::null_condition < typename source_type::value_type > (),
-			details::null_transformer < typename source_type::value_type > ()
+			details::null_transformer < details::list_handle < source_type > > ()
 		};
 	}
-
 
 }
 

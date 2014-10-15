@@ -62,11 +62,11 @@ TEST_F (test_from_sources, from_array_fundamental_type) {
 	size_t query_count = 0;
 
 	for (auto v : query) {
-		EXPECT_EQ(v, source_array_int[query_count]);
+		ASSERT_EQ(v, source_array_int[query_count]);
 		++query_count;
 	}
 
-	EXPECT_EQ(sizeof_array(source_array_int), query_count);
+	ASSERT_EQ(sizeof_array(source_array_int), query_count);
 }
 
 TEST_F(test_from_sources, from_array_structs) {
@@ -76,11 +76,11 @@ TEST_F(test_from_sources, from_array_structs) {
 	size_t query_count = 0;
 
 	for (auto v : query) {
-		EXPECT_EQ(v, source_array_struct[query_count]);
+		ASSERT_EQ(v, source_array_struct[query_count]);
 		++query_count;
 	}
 
-	EXPECT_EQ(sizeof_array(source_array_struct), query_count);
+	ASSERT_EQ(sizeof_array(source_array_struct), query_count);
 }
 
 TEST_F(test_from_sources, from_vector_fundamental_type) {
@@ -90,11 +90,11 @@ TEST_F(test_from_sources, from_vector_fundamental_type) {
 	size_t query_count = 0;
 
 	for (auto v : query) {
-		EXPECT_EQ(v, source_vector_int [query_count]);
+		ASSERT_EQ(v, source_vector_int [query_count]);
 		++query_count;
 	}
 
-	EXPECT_EQ(source_vector_int.size (), query_count);
+	ASSERT_EQ(source_vector_int.size (), query_count);
 }
 
 TEST_F(test_from_sources, from_const_array_fundamental_type) {
@@ -104,11 +104,11 @@ TEST_F(test_from_sources, from_const_array_fundamental_type) {
 	size_t query_count = 0;
 
 	for (auto v : query) {
-		EXPECT_EQ(v, source_const_array_int[query_count]);
+		ASSERT_EQ (v, source_const_array_int [query_count]);
 		++query_count;
 	}
 
-	EXPECT_EQ(sizeof_array(source_const_array_int), query_count);
+	ASSERT_EQ (sizeof_array (source_const_array_int), query_count);
 }
 
 TEST_F(test_from_sources, from_const_array_structs) {
@@ -118,11 +118,11 @@ TEST_F(test_from_sources, from_const_array_structs) {
 	size_t query_count = 0;
 
 	for (auto v : query) {
-		EXPECT_EQ(v, source_const_array_struct[query_count]);
+		ASSERT_EQ (v, source_const_array_struct [query_count]);
 		++query_count;
 	}
 
-	EXPECT_EQ(sizeof_array(source_const_array_struct), query_count);
+	ASSERT_EQ (sizeof_array (source_const_array_struct), query_count);
 }
 
 TEST_F(test_from_sources, from_const_vector_fundamental_type) {
@@ -132,11 +132,11 @@ TEST_F(test_from_sources, from_const_vector_fundamental_type) {
 	size_t query_count = 0;
 
 	for (auto v : query) {
-		EXPECT_EQ(v, source_const_vector_int[query_count]);
+		ASSERT_EQ (v, source_const_vector_int [query_count]);
 		++query_count;
 	}
 
-	EXPECT_EQ(source_const_vector_int.size(), query_count);
+	ASSERT_EQ (source_const_vector_int.size (), query_count);
 }
 
 TEST_F(test_from_sources, from_query) {
@@ -148,9 +148,9 @@ TEST_F(test_from_sources, from_query) {
 	size_t query_count = 0;
 
 	for (auto v : query_b) {
-		EXPECT_EQ(v, source_vector_int[query_count]);
+		ASSERT_EQ (v, source_vector_int [query_count]);
 		++query_count;
 	}
 
-	EXPECT_EQ(source_vector_int.size(), query_count);
+	ASSERT_EQ (source_vector_int.size (), query_count);
 }

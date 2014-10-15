@@ -30,6 +30,9 @@ int main (int arg_c, char **arg_v) {
 
 	auto q = from (issue_source);
 
+	auto v = issue_source.begin ();
+	auto x = *v;
+
 	for (int i : q) {
 		std::cout << i << std::endl;
 	}
@@ -64,7 +67,7 @@ int main (int arg_c, char **arg_v) {
 		).where(
 			[](const test_struct & i) { return i.id > 5; }
 		);
-
+	
 	query_b.visit([](const test_struct & i) { std::cout << i.id << " "; });
 
 	// you can also send a visitor anonymous function to browse through the 
