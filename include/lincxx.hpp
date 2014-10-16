@@ -10,476 +10,590 @@ namespace lincxx {
 
 	namespace details {
 
-		namespace tools {
-		
-			template < class t >
-			struct add : public std::binary_function < t, t, t > {
-		
-				inline t operator () (const t & v1, const t & v2) const {
+		namespace extra {
+
+			template < class _t >
+			struct add : public std::binary_function < _t, _t, _t > {
+
+				inline _t operator () (const _t & v1, const _t & v2) const {
 					return v1 + v2;
 				}
 			};
-		
+
 		}
+
+		template < class _base_t, class _base_value_t >
+		struct common_methods {
+
+			inline const _base_t & base_this () const {
+				return *reinterpret_cast <const _base_t *> (this);
+			}
+
+			template < class _list_t = std::vector < _base_value_t > >
+			inline _list_t to_list () const {
+				_list_t dest;
+
+				for (auto v : base_this ())
+					dest.push_back (v);
+
+				return dest;
+			}
+
+			template < class _callback_t >
+			inline void visit (const _callback_t & call) const {
+
+				for (auto i : base_this ())
+					call (i);
+			}
+
+			inline size_t size () const {
+
+				size_t s = 0;
+
+				auto
+					it = base_this ().begin (),
+					it_end = base_this ().end ();
+
+				for (; it != it_end; ++it)
+					++s;
+
+				return s;
+			}
+
+			inline _base_value_t first_or_default (const _base_value_t & default_value) const {
+				auto it = base_this ().begin ();
+
+				if (it != base_this ().end ())
+					return *it;
+
+				return default_value;
+			}
+
+			template < class _exp_t >
+			inline _base_value_t first_or_default (const _base_value_t & default_value, _exp_t expression) const {
+				auto
+					it = base_this ().begin (),
+					it_end = base_this ().end ();
+
+				for (; it != it_end; ++it) {
+					if (expression (*it))
+						return *it;
+				}
+
+				return default_value;
+			}
+
+			template < 
+				class _addition_t = extra::add < _base_value_t >
+			>
+			typename _addition_t::result_type sum () const {
+				typename _addition_t::result_type res = typename _addition_t::result_type ();
+				_addition_t adder;
+
+				for (auto v : base_this ())
+					res = adder (res, v);
+
+				return res;
+			}
+
+			template < 
+				class _list_t = std::vector < _base_value_t >,
+				class _comp_t = std::less < _base_value_t >
+			>
+			inline _list_t distinct () const {
+				using key_map = std::map < _base_value_t, int, _comp_t >;
+
+				key_map keys;
+				_list_t ret;
+
+				typename key_map::const_iterator
+					map_it,
+					map_end = keys.end ();
+
+				for (auto i : base_this ()) {
+
+					map_it = keys.find (i);
+					if (map_it == map_end) {
+						keys [i] = 0;
+						ret.push_back (i);
+					}
+				}
+
+				return ret;
+			}
+
+		};
 		
 		// -------------------------------------------------------------------------------------
-		// source type abstraction
+		// data source abstraction
 		// -------------------------------------------------------------------------------------
-		template < class array_value_type, size_t array_size >
-		struct array_handle {
+		template <
+			class _t,
+			class _it_t = _t *,
+			class _const_it_t = const _t *
+		>
+		struct iterable_base_types {
+			using value_type = _t;
+			using reference = _t &;
+			using const_reference = const _t &;
 
-			using value_type = array_value_type;
-			using iterator = array_value_type *;
-			using const_iterator = const array_value_type *;
-			using reference = array_value_type &;
-			using const_reference = const array_value_type &;
-
-			array_value_type (& data) [array_size];
-
-			inline iterator begin () { return +data; }
-			inline iterator end () { return data + array_size; }
-
-			inline const_iterator begin () const { return +data; }
-			inline const_iterator end () const { return data + array_size; }
+			using iterator = _it_t;
+			using const_iterator = _const_it_t;
 		};
 
-		template < class source_type >
-		struct list_handle {
+		template <
+			class _src_t,
+			class _t = typename _src_t::value_type,
+			class _it_t = typename _src_t::iterator,
+			class _const_it_t = typename _src_t::const_iterator
+		>
+		struct data_handle :
+			public iterable_base_types <
+				_t,
+				_it_t,
+				_const_it_t
+			> 
+		{
 
-			using value_type = typename source_type::value_type;
-			using iterator = typename source_type::iterator;
-			using const_iterator = typename source_type::const_iterator;
-			using reference = typename source_type::reference;
-			using const_reference = typename source_type::const_reference;
+			_src_t & data;
 
-			source_type & data;
+			inline data_handle (_src_t & v) : data (v) {}
 
-			inline iterator begin () { return data.begin (); }
-			inline iterator end () { return data.end (); }
+			inline iterator begin () { return std::begin (data); }
+			inline iterator end () { return std::end (data); }
 
-			inline const_iterator begin () const { return data.begin (); }
-			inline const_iterator end () const { return data.end(); }
+			inline const_iterator begin () const {
+				const _src_t & c_data = data;
+				return std::begin (c_data);
+			}
+
+			inline const_iterator end () const {
+				const _src_t & c_data = data;
+				return std::end (c_data);
+			}
+
 		};
 
-		
-		template < class source_type >
-		struct list_handle < const source_type > {
+		template <
+			class _src_t,
+			class _t,
+			class _it_t,
+			class _const_it_t
+		>
+		struct data_handle < const _src_t, _t, _it_t, _const_it_t > :
+			public iterable_base_types <
+				_t,
+				_const_it_t,
+				_const_it_t
+			>
+		{
 
-			using value_type = typename source_type::value_type;
-			using iterator = typename source_type::const_iterator;
-			using const_iterator = typename source_type::const_iterator;
-			using reference = typename source_type::const_reference;
-			using const_reference = typename source_type::const_reference;
+			const _src_t & data;
 
-			const source_type & data;
+			inline data_handle (const _src_t & v) : data (v) {}
 
-			inline const_iterator begin () const { return data.cbegin (); }
-			inline const_iterator end () const { return data.cend (); }
+			inline const_iterator begin () const {
+				return std::begin (data);
+			}
+
+			inline const_iterator end () const {
+				return std::end (data);
+			}
+
 		};
-		
+
+		template <
+			class _t,
+				size_t _size,
+			class data_handle_t = data_handle < _t (&) [_size], _t, _t *, const _t * >
+		>
+		struct array_handle : public data_handle_t {
+			inline array_handle (_t (&v) [_size]) : data_handle_t (v) {}
+		};
+
+		template < class _base_t, class _it_t >
+		struct proxy_iterator_base {
+
+			_it_t source_it;
+
+			inline proxy_iterator_base (_it_t it) : source_it (it) {}
+
+			inline bool operator == (const _base_t & v) const { return source_it == v.source_it; }
+			inline bool operator != (const _base_t & v) const { return source_it != v.source_it; }
+
+			inline auto operator * () -> decltype (*source_it) {
+				return *source_it;
+			}
+
+			inline const _base_t & operator ++ () {
+				++source_it;
+				return *reinterpret_cast < const _base_t * > (this);
+			}
+
+		};
 
 		// -------------------------------------------------------------------------------------
 		// Conditions and Lambda References
 		// -------------------------------------------------------------------------------------
-		template < class item_type >
+		template < class _item_t >
 		struct null_condition {
-			inline bool operator ()(const item_type & i) const { return true; }
+			inline bool operator ()(const _item_t & i) const { return true; }
 		};
 
-		template < class t >
+		template < class _t >
 		struct lambda /*: public lambda_ref < decltype (&t::operator ()) >*/ {};
 
-		template < class c_type, class r_type, class ... p_v_type >
-		struct lambda < r_type (c_type::*)(p_v_type...) const > {
+		template < class _class_t, class _ret_t, class ... _param_tv >
+		struct lambda < _ret_t (_class_t::*)(_param_tv...) const > {
 
-			using return_type = r_type;
-			using class_type = c_type;
+			using return_type = _ret_t;
+			using class_type = _class_t;
 
 			class_type address;
 
-			inline return_type operator () (p_v_type ... arg_v) const { return address (arg_v...); }
+			inline return_type operator () (_param_tv ... arg_v) const { return address (arg_v...); }
 
 		};
 		// -------------------------------------------------------------------------------------
 		// Type Transformation
 		// -------------------------------------------------------------------------------------
-		template < class member_type >
+		template < class _member_t >
 		struct accessor {};
 		
-		template < class class_t, class value_t >
-		struct accessor < value_t class_t::* > {
+		template < class _class_t, class _value_t >
+		struct accessor < _value_t _class_t::* > {
 		
-			using class_type = class_t;
-			using value_type = value_t;
+			using class_type = _class_t;
+			using value_type = _value_t;
 		
-			value_t class_type::* address;
+			_value_t class_type::* address;
 		
-			inline accessor(value_t class_type::*v) : address(v) {}
+			inline accessor(_value_t _class_t::*v) : address(v) {}
 		
-			inline value_type get(const class_type & ref) const {
+			inline _value_t get(const _class_t & ref) const {
 				return ref.*address;
 			}
 		
 		};
 		
-		template < class class_t, class value_t >
-		struct accessor < value_t(class_t::*)() > {
+		template < class _class_t, class _value_t >
+		struct accessor < _value_t(_class_t::*)() > {
 		
-			using class_type = class_t;
-			using value_type = value_t;
+			using class_type = _class_t;
+			using value_type = _value_t;
 		
-			value_t(class_type::*address)();
+			_value_t(_class_t::*address)();
 		
-			inline accessor(value_t(class_type::*v)()) : address(v) {}
+			inline accessor(_value_t(_class_t::*v)()) : address(v) {}
 		
-			inline value_type get(const class_type & ref) const {
+			inline _value_t get(const _class_t & ref) const {
 				return ref.*address();
 			}
 		
 		};
 		
-		template < class t >
+		template < class _t >
 		struct extract_accessor_type {
-			using value_type = typename t::value_type;
+			using value_type = typename _t::value_type;
 		};
 		
-		template < class ... t >
+		template < class ... _tv >
 		struct extract_accessor_class {};
 		
-		template < class t, class ... v >
-		struct extract_accessor_class < t, v ... > {
-			using class_type = typename t::class_type;
+		template < class _t, class ... _v >
+		struct extract_accessor_class < _t, _v ... > {
+			using class_type = typename _t::class_type;
 		};
 		
-		template < size_t i, class class_type, class value_type, class ... accessor_types >
+		template < size_t i, class _class_t, class _value_t, class ... _accessor_tv >
 		struct tuple_for_each {
-			inline static void copy(const class_type & src, const std::tuple < accessor_types... > & accessors, value_type & dst) {
+			inline static void copy (const _class_t & src, const std::tuple < _accessor_tv... > & accessors, _value_t & dst) {
 				std::get < i - 1 >(dst) =
 					std::get < i - 1 >(accessors).get(src);
-				tuple_for_each  < i - 1, class_type, value_type, accessor_types ... >::copy(src, accessors, dst);
+				tuple_for_each  < i - 1, _class_t, _value_t, _accessor_tv ... >::copy (src, accessors, dst);
 			}
 		};
 		
-		template <class class_type, class value_type, class ... accessor_types >
-		struct tuple_for_each < 0, class_type, value_type, accessor_types ... > {
-			inline static void copy(const class_type & src, const std::tuple < accessor_types... > & accessors, value_type & dst) {}
+		template <class _class_t, class _value_t, class ... _accessor_tv >
+		struct tuple_for_each < 0, _class_t, _value_t, _accessor_tv ... > {
+			inline static void copy(const _class_t & src, const std::tuple < _accessor_tv... > & accessors, _value_t & dst) {}
 		};
-		
-		template < class source_type, class ... accessor_types >
-		struct transformer {
+
+		template < class _src_t, class _it_t, class ... _accessor_tv >
+		struct select_iterator :
+			public proxy_iterator_base < 
+				select_iterator < _src_t, _it_t, _accessor_tv ... >,
+				_it_t
+			>
+		{
 
 			using value_type = std::tuple <
-				typename extract_accessor_type < accessor_types >::value_type ...
+				typename extract_accessor_type < _accessor_tv >::value_type ...
 			>;
-		
-			using reference = value_type;
-			using const_reference = value_type;
-		
-			using class_type = typename extract_accessor_class < accessor_types ... >::class_type;
-		
-			std::tuple < accessor_types ... > accessor_instances;
-		
-			inline transformer(accessor_types ... accessors) : accessor_instances(accessors...) {}
-		
-			inline reference transform(const class_type & src) const {
+
+			using class_type = typename extract_accessor_class < _accessor_tv ... >::class_type;
+
+			std::tuple < _accessor_tv ... > accessor_instances;
+
+			inline select_iterator (std::tuple < _accessor_tv ... > accessors, _it_t it) : 
+				proxy_iterator_base < 
+					select_iterator < _src_t, _it_t, _accessor_tv ... >, 
+					_it_t 
+				> (it),
+				accessor_instances (accessors)
+			{}
+
+			inline value_type operator * () {
 				value_type dst;
-				tuple_for_each < sizeof...(accessor_types), class_type, value_type, accessor_types ... >::copy(src, accessor_instances, dst);
+				tuple_for_each < sizeof...(_accessor_tv), class_type, value_type, _accessor_tv ... >::copy (*source_it, accessor_instances, dst);
 				return dst;
 			}
-		
-		};
-		
-		template < class source_type, class t >
-		struct transformer < source_type,  t > {
-		
-			using value_type = typename extract_accessor_type < t >::value_type;
-			using reference = value_type;
-			using const_reference = value_type;
-			using class_type = typename extract_accessor_class < t >::class_type;
-		
-			t accessor;
-		
-			inline transformer(t v) : accessor(v) {}
-		
-			inline reference transform(const class_type & src) const {
-				return accessor.get(src);
-			}
-		
-		};
-		
-		template < class source_type >
-		struct null_transformer {
-			using value_type = typename source_type::value_type;
-			using reference = typename source_type::reference;
-			using const_reference = typename source_type::const_reference;
 
-			inline reference transform( reference v) const { return v; }
+		};
+		
+		template < class _src_t, class _it_t, class et0 >
+		struct select_iterator < _src_t, _it_t, et0 > :
+			public proxy_iterator_base < 
+				select_iterator < _src_t, _it_t, et0 >,
+				_it_t
+			>
+		{
+
+			using value_type = typename extract_accessor_type < et0 >::value_type;
+			using this_type = select_iterator < _src_t, _it_t, et0 >;
+
+			et0 accessor;
+
+			inline select_iterator ( et0 v, _it_t it) : 
+				proxy_iterator_base < 
+					select_iterator < _src_t, _it_t, et0 >,
+					_it_t
+				> (it),
+				accessor (v)
+			{}
+
+			inline value_type operator * () {
+				return accessor.get (*source_it);
+			}
+
+		};
+
+		template < class _src_t, class ... _accessor_tv >
+		struct selector : 
+			public iterable_base_types <
+				std::tuple <
+					typename extract_accessor_type < _accessor_tv >::value_type ...
+				>,
+				select_iterator < _src_t, typename _src_t::const_iterator, _accessor_tv... >,
+				select_iterator < _src_t, typename _src_t::const_iterator, _accessor_tv... >
+			>,
+			public common_methods < 
+				selector < _src_t, _accessor_tv... >, 
+				std::tuple <
+					typename extract_accessor_type < _accessor_tv >::value_type ...
+				>
+			> 
+		{
+			_src_t data;
+			std::tuple < _accessor_tv ... > accessor_instances;
+
+			inline selector (_src_t data_ref, _accessor_tv ... accessors) : data (data_ref), accessor_instances (accessors...) {}
+
+			inline const_iterator begin () const { return{accessor_instances, data.begin ()}; }
+			inline const_iterator end () const { return {accessor_instances, data.end ()}; }
+
+		};
+
+		template < class _src_t, class et0 >
+		struct selector < _src_t, et0 > : 
+			public common_methods < 
+				selector < _src_t, et0 >,
+				typename extract_accessor_type < et0 >::value_type
+			>
+		{
+
+			using value_type = typename extract_accessor_type < et0 >::value_type;
+
+			using const_iterator = typename select_iterator < _src_t, typename _src_t::const_iterator, et0 >;
+			using iterator = const_iterator;
+
+			_src_t data;
+			et0 accessor;
+
+			inline selector (_src_t data_ref, et0 v) : data (data_ref), accessor (v) {}
+
+			inline const_iterator begin () const { return{accessor, data.begin ()}; }
+			inline const_iterator end () const { return{accessor, data.end ()}; }
+
 		};
 
 		// ----------------------
 
 		template < 
-			class source_it_type, 
-			class condition_type,
-			class transformer_type
+			class _src_t,
+			class _it_t,
+			class _cond_t
 		>
-		struct iterator {
+		struct iterator :
+			public proxy_iterator_base <
+				iterator < _src_t, _it_t, _cond_t >,
+				_it_t
+			>
+		{
 
-			condition_type & condition;
-			transformer_type & transformer;
+			_cond_t condition;
 
-			mutable source_it_type
-				source_it,
+			_it_t
 				source_end;
 
-			using this_type = iterator < source_it_type, condition_type, transformer_type >;
+			inline iterator ( _cond_t cond, _it_t it, _it_t end ) : 
+				proxy_iterator_base < iterator < _src_t, _it_t, _cond_t >, _it_t > (it),
+				condition (cond),
+				source_end (end)
+			{
+				search_first ();
+			}
 
-			inline const this_type & operator ++ () const {
+			inline const iterator < _src_t, _it_t, _cond_t > & operator ++ () {
 				search_next ();
 				return *this;
 			}
-
-			inline bool operator == (const this_type & v) const { return source_it == v.source_it; }
-			inline bool operator != (const this_type & v) const { return source_it != v.source_it; }
-
-			inline typename transformer_type::reference operator * () const
-			{
-				return transformer.transform (*source_it);
-			}
-
-			inline const this_type & search_first () const {
+												    
+			inline void search_first () {
 				while (source_it != source_end && !condition (*source_it))
 					++source_it;
-
-				return *this;
 			}
 
-			inline const this_type & search_next () const {
+			inline void search_next () {
 				do
 					++source_it;
 				while (source_it != source_end && !condition (*source_it));
-
-				return *this;
 			}
 
 		};
 
 		template < 
-			class source_type,
-			class condition_type,
-			class transformer_type
+			class _src_t,
+			class _cond_t
 		>
-		struct query {
+		struct query : 
+			public iterable_base_types <
+				typename _src_t::value_type,
+				details::iterator < _src_t, typename _src_t::iterator, _cond_t >,
+				details::iterator < _src_t, typename _src_t::const_iterator, _cond_t>
+			>,
+			public common_methods < 
+				query < _src_t, _cond_t >,
+				typename _src_t::value_type
+			> 
+		{
 
-			source_type source;
+			_src_t source;
 
-			condition_type			
+			_cond_t			
 				condition;
 
-			transformer_type
-				transformer;
-
-			using value_type = typename transformer_type::value_type;
-
-			using iterator = details::iterator < 
-				typename source_type::iterator, 
-				condition_type, 
-				transformer_type 
-			>;
-
-			using const_iterator = const details::iterator < 
-				typename source_type::const_iterator, 
-				condition_type, 
-				transformer_type 
-			>;
-
-			using reference = typename transformer_type::reference;
-			using const_reference = typename transformer_type::const_reference;
+			inline query (_src_t v, _cond_t cond) : source (v), condition (cond) {}
 
 			inline iterator begin () {
-				iterator new_it = {
+				return iterator (
 					condition,
-					transformer,
 					source.begin (),
 					source.end ()
-				};
-
-				return new_it.search_first ();
+				);
 			}
 
 			inline iterator end () {
-				return {
+				return iterator (
 					condition,
-					transformer,
 					source.end (),
 					source.end ()
-				};
+				);
 			}
 
 			inline const_iterator begin () const {
-				const_iterator new_it = {
-					condition,
-					transformer,
-					source.begin (),
-					source.end ()
-				};
+				const _src_t & const_source = source;
 
-				return new_it.search_first ();
+				return const_iterator (
+					condition,
+					const_source.begin (),
+					const_source.end ()
+				);
 			}
 
 			inline const_iterator end () const {
-				return {
+				const _src_t & const_source = source;
+
+				return const_iterator (
 					condition,
-					transformer,
-					source.end (),
-					source.end ()
-				};
+					const_source.end (),
+					const_source.end ()
+				);
 			}
 
 			template < class condition_exp_type >
 			inline query < 
-				source_type, 
-				lambda < decltype (&condition_exp_type::operator ()) >,
-				transformer_type
+				_src_t, 
+				lambda < decltype (&condition_exp_type::operator ()) >
 			>
-			where (condition_exp_type condition_ref) 
+			where (condition_exp_type condition_ref) const 
 			{
 				return {
 					source,
-					lambda < decltype (&condition_exp_type::operator ()) > {condition_ref},
-					transformer
+					lambda < decltype (&condition_exp_type::operator ()) > {condition_ref}
 				};
 			}
 
-			template < class ... address_types >
-			inline query < 
-				source_type,
-				condition_type,
-				details::transformer < source_type, accessor < address_types > ... >
+			template <
+				class ... _address_tv
 			>
-			select(address_types ... accessors) 
+			inline selector <
+				data_handle < 
+					const query < _src_t, _cond_t >,
+					value_type,
+					iterator,
+					const_iterator
+				>,
+				accessor < _address_tv > ...
+			>
+			select (_address_tv ... accessors)
 			{
-				return{
-					source,
-					condition,
-					details::transformer < source_type, accessor < address_types > ... >(accessors...)
-				};
+				return
+					selector <
+						data_handle  < const query < _src_t, _cond_t > >,
+						accessor < _address_tv > ...
+					> (
+						data_handle  < const query < _src_t, _cond_t > > (*this),
+						accessors ...
+					);
 			}
 
-			template < class list_type = std::vector < value_type > >
-			inline list_type to_list() {
-				list_type dest;
-			
-				for (auto v : *this)
-					dest.push_back(v);
-			
-				return dest;
-			}
-			
-			template < class callback_type >
-			inline void visit(const callback_type & call) {
-				for (auto i : *this)
-					call(i);
-			}
-			
-			inline size_t size() {
-				size_t s = 0;
-			
-				auto
-					it = begin(),
-					it_end = end();
-			
-				for (; it != it_end; ++it)
-					++s;
-			
-				return s;
-			}
-			
-			template < class addition = tools::add < value_type > >
-			typename addition::result_type sum() {
-				typename addition::result_type res = typename addition::result_type();
-				addition adder;
-			
-				for (auto v : *this)
-					res = adder(res, v);
-			
-				return res;
-			}
-			
-			inline value_type first_or_default(const value_type & default_value) {
-				auto it = begin();
-			
-				if (it != end())
-					return *it;
-			
-				return default_value;
-			}
-			
-			template < class expression_type >
-			inline value_type first_or_default(const value_type & default_value, expression_type expression) {
-				auto
-					it = begin(),
-					it_end = end();
-			
-				for (; it != it_end; ++it) {
-					if (expression(*it))
-						return *it;
-				}
-			
-				return default_value;
-			}
-			
-			template < class list_type = std::vector < value_type >, class comparer = std::less < value_type > >
-			inline list_type distinct() {
-				using key_map = std::map < value_type, int, comparer >;
-			
-				key_map keys;
-				list_type ret;
-			
-				typename key_map::const_iterator
-					map_it,
-					map_end = keys.end();
-			
-				for (auto i : *this) {
-			
-					map_it = keys.find(i);
-					if (map_it == map_end) {
-						keys[i] = 0;
-						ret.push_back(i);
-					}
-				}
-			
-				return ret;
-			}
 
 		};
 
 	}
 
-	template < class value_type, size_t size >
-	inline details::query < 
-		details::array_handle < value_type, size >,
-		details::null_condition < value_type >,
-		details::null_transformer < details::array_handle < value_type, size > >
-	> from (value_type (&v)[size]) {
-		return {
-			details::array_handle < value_type, size > {v},
-			details::null_condition < value_type > (),
-			details::null_transformer < details::array_handle < value_type, size > > ()
-		};
+	template < 
+		class _t, 
+		size_t _size, 
+		class query_t = details::query < details::array_handle < _t, _size >, details::null_condition < _t > >
+	>
+	inline query_t from (_t (&v)[_size]) {
+		return query_t (
+			details::array_handle < _t, _size > {v},
+			details::null_condition < _t > ()
+		);
 	}
 
-	template < class source_type >
-	inline details::query < 
-		details::list_handle < source_type >,
-		details::null_condition < typename source_type::value_type >,
-		details::null_transformer < details::list_handle < source_type > >
-	> from (source_type & v) {
-		return {
-			details::list_handle < source_type > {v},
-			details::null_condition < typename source_type::value_type > (),
-			details::null_transformer < details::list_handle < source_type > > ()
-		};
+	template < 
+		class _src_t, 
+		class query_t = details::query < details::data_handle < _src_t >, details::null_condition < typename _src_t::value_type > >
+	>
+	inline query_t from (_src_t & v) {
+			return query_t (
+			details::data_handle < _src_t > (v),
+			details::null_condition < typename _src_t::value_type > ()
+		);
 	}
 
 }

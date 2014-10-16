@@ -27,18 +27,6 @@ const int const_source_a[] = { 8, 5, 7, 8, 2, 5, 6, 3, 3, 7, 2, 4, 1 };
 const std::vector < int > issue_source = {8, 5, 7, 8, 2, 5, 6, 3, 3, 7, 2, 4, 1};
 
 int main (int arg_c, char **arg_v) {
-
-	auto q = from (issue_source);
-
-	auto v = issue_source.begin ();
-	auto x = *v;
-
-	for (int i : q) {
-		std::cout << i << std::endl;
-	}
-
-	return 0;
-
 	// simple filter example:
 
 	// select all items lesser than 5
@@ -128,14 +116,14 @@ int main (int arg_c, char **arg_v) {
 			&test_struct::id,
 			&test_struct::select
 		);
-
+	
 	for (auto v : transforming_query) {
 		auto id = std::get < 0 >(v);
 		auto sel = std::get < 1 >(v);
-
+	
 		std::cout << "ID: " << id << " SEL: " << sel << std::endl;
 	}
-
+	
 	// if you choose to select a single member
 	// the returning type will be a copy 
 	// of the same type as the selected member
@@ -145,12 +133,12 @@ int main (int arg_c, char **arg_v) {
 		).select(
 			&test_struct::id
 		);
-
+	
 	// this way no tuple access is needed
 	for (auto v : transforming_query_b) {
 		std::cout << v << std::endl;
 	}
-
+	
 	// if its possible to apply a sum operation (+) to the 
 	// selected type this is possible to execute a sum operation
 	int id_sum = from(source_b).select(&test_struct::id).sum ();
