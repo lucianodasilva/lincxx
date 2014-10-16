@@ -101,21 +101,21 @@ inline void test_expression(source_type & source, expression & condition) {
 		if (res_index >= res_size)
 			GTEST_FAIL() << "Unexpected return value count!";
 
-		EXPECT_EQ(v, result[res_index]);
+		ASSERT_EQ(result[res_index], v);
 		++res_index;
 	}
 }
 
 TEST_F (test_filters, int_array_less_5) {
-	test_expression(source_array_int, [](int & i) { return i < 5; });
+	test_expression(source_array_int, [](const int & i) { return i < 5; });
 }
 
 TEST_F(test_filters, struct_array_less_5) {
-	test_expression(source_array_struct, [](test_struct & i) { return i.id < 5; });
+	test_expression(source_array_struct, [](const test_struct & i) { return i.id < 5; });
 }
 
 TEST_F(test_filters, int_vector_less_5) {
-	test_expression(source_vector_int, [](int & i) { return i < 5; });
+	test_expression(source_vector_int, [](const int & i) { return i < 5; });
 }
 
 TEST_F(test_filters, const_int_array_less_5) {
