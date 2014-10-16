@@ -26,7 +26,7 @@ namespace lincxx {
 		struct common_methods {
 
 			inline const _base_t & base_this () const {
-				return *reinterpret_cast <const _base_t *> (this);
+				return *static_cast <const _base_t *> (this);
 			}
 
 			template < class _list_t = std::vector < _base_value_t > >

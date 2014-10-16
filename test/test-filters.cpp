@@ -36,8 +36,6 @@ protected:
 	static const std::vector < int > source_const_vector_int;
 	// --------
 
-
-
 	virtual void SetUp () {}
 
 	virtual void TearDown () {}
