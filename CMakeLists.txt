@@ -59,7 +59,10 @@ if ( LINCXX_UNIT )
 	add_subdirectory ( ${LINCXX_UNIT_PATH}/gtest )
 	include_directories ( ${LINCXX_UNIT_PATH}/gtest/include )
 	
-	file ( GLOB UNIT_TESTS_SOURCE ${LINCXX_UNIT_PATH}/*.cpp )
+	file ( GLOB UNIT_TESTS_SOURCE 
+		${LINCXX_UNIT_PATH}/*.h
+		${LINCXX_UNIT_PATH}/*.cpp
+	)
 	
 	add_executable ( tests ${UNIT_TESTS_SOURCE} )
 	target_link_libraries ( tests gtest gtest_main )
