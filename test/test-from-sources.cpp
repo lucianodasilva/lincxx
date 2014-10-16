@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <lincxx.hpp>
 #include <vector>
+#include "test_tools.h"
 
 class test_from_sources : public ::testing::Test {
 protected:
@@ -50,107 +51,46 @@ const int test_from_sources::source_const_array_int[] = { 8, 5, 7, 8, 2, 5, 6, 3
 const test_from_sources::test_struct test_from_sources::source_const_array_struct[] = { { 2, true, { "A" } }, { 7, false, { "A" } }, { 12, false, { "A" } }, { 5, true, { "B" } }, { 1, true, { "A" } }, { 2, false, { "A" } }, { 72, false, { "A" } }, { 1, true, { "B" } }, { 5, true, { "A" } }, { 8, true, { "A" } }, { 1, true, { "A" } } };
 const std::vector < int > test_from_sources::source_const_vector_int = { 8, 5, 7, 8, 2, 5, 6, 3, 3, 7, 2, 4, 1 };
 
-template < class t, size_t length >
-inline size_t sizeof_array(t(&array_inst)[length]) {
-	return length;
+template < class source_type >
+inline void test_source (source_type & source) {
+	using namespace lincxx;
+	using namespace lincxx_test;
+
+	auto query = from (source);
+	size_t query_count = 0;
+
+	for (auto v : query) {
+		ASSERT_EQ (v, source [query_count]);
+		++query_count;
+	}
+
+	ASSERT_EQ (source_size (source), query_count);
 }
 
 TEST_F (test_from_sources, from_array_fundamental_type) {
-	using namespace lincxx;
-
-	auto query = from(source_array_int);
-	size_t query_count = 0;
-
-	for (auto v : query) {
-		ASSERT_EQ(v, source_array_int[query_count]);
-		++query_count;
-	}
-
-	ASSERT_EQ(sizeof_array(source_array_int), query_count);
+	test_source (source_array_int);
 }
 
 TEST_F(test_from_sources, from_array_structs) {
-	using namespace lincxx;
-
-	auto query = from(source_array_struct);
-	size_t query_count = 0;
-
-	for (auto v : query) {
-		ASSERT_EQ(v, source_array_struct[query_count]);
-		++query_count;
-	}
-
-	ASSERT_EQ(sizeof_array(source_array_struct), query_count);
+	test_source (source_array_struct);
 }
 
 TEST_F(test_from_sources, from_vector_fundamental_type) {
-	using namespace lincxx;
-
-	auto query = from(source_vector_int);
-	size_t query_count = 0;
-
-	for (auto v : query) {
-		ASSERT_EQ(v, source_vector_int [query_count]);
-		++query_count;
-	}
-
-	ASSERT_EQ(source_vector_int.size (), query_count);
+	test_source (source_vector_int);
 }
 
 TEST_F(test_from_sources, from_const_array_fundamental_type) {
-	using namespace lincxx;
-
-	auto query = from(source_const_array_int);
-	size_t query_count = 0;
-
-	for (auto v : query) {
-		ASSERT_EQ (v, source_const_array_int [query_count]);
-		++query_count;
-	}
-
-	ASSERT_EQ (sizeof_array (source_const_array_int), query_count);
+	test_source (source_const_array_int);
 }
 
 TEST_F(test_from_sources, from_const_array_structs) {
-	using namespace lincxx;
-
-	auto query = from(source_const_array_struct);
-	size_t query_count = 0;
-
-	for (auto v : query) {
-		ASSERT_EQ (v, source_const_array_struct [query_count]);
-		++query_count;
-	}
-
-	ASSERT_EQ (sizeof_array (source_const_array_struct), query_count);
+	test_source (source_const_array_struct);
 }
 
 TEST_F(test_from_sources, from_const_vector_fundamental_type) {
-	using namespace lincxx;
-
-	auto query = from(source_const_vector_int);
-	size_t query_count = 0;
-
-	for (auto v : query) {
-		ASSERT_EQ (v, source_const_vector_int [query_count]);
-		++query_count;
-	}
-
-	ASSERT_EQ (source_const_vector_int.size (), query_count);
+	test_source (source_const_vector_int);
 }
 
 TEST_F(test_from_sources, from_query) {
-	using namespace lincxx;
-
-	auto query_a = from(source_vector_int);
-	auto query_b = from(query_a);
-
-	size_t query_count = 0;
-
-	for (auto v : query_b) {
-		ASSERT_EQ (v, source_vector_int [query_count]);
-		++query_count;
-	}
-
-	ASSERT_EQ (source_vector_int.size (), query_count);
+	test_source (source_vector_int);
 }
