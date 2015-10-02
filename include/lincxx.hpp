@@ -6,6 +6,221 @@
 #include <vector>
 #include <functional>
 
+/*
+namespace details {
+
+	namespace extras {
+		template < class _t >
+		struct add : public binary_function < _t, _t, _t > {
+			inline _t operator () (const _t & v1, const _t & v2) const {
+				return v1 + v2;
+			}
+		};
+	}
+
+	template < class _source_t >
+	struct source_traits {
+		using value_type = typename _source_t::value_type;
+	};
+
+	template < class _t, size_t _length >
+	struct source_traits < _t[_length] > {
+		using value_type = _t;
+	};
+
+	// view iterator
+	template < class _it_t, class _predicate_t >
+	struct view_iterator {
+
+		_it_t						current, end;
+		_predicate_t				predicate;
+
+		inline void search_first() {
+			while (current != end && !predicate(*current))
+				++current;
+		}
+
+		inline void search_next() {
+			do {
+				++current;
+			} while (current != end && !predicate(*current));
+		}
+
+		inline view_iterator(_it_t c_it, _it_t end_it, _predicate_t predicate_v) :
+			current (c_it),
+			end (end_it),
+			predicate (predicate_v)
+		{
+			if (predicate)
+				search_first();
+		}
+
+		inline bool operator == (const view_iterator & other_it) const { return current == other_it.current; }
+		inline bool operator != (const view_iterator & other_it) const { return !(operator ==  (other_it)); }
+
+		inline auto operator * () { return *current; }
+
+		inline const view_iterator & operator ++ () {
+			if (predicate)
+				search_next();
+			else
+				++current;
+
+			return *this;
+		}
+
+	};
+
+	template < class _it_t, class _predicate_t > 
+	inline auto create_iterator( _it_t it, _it_t end, _predicate_t predicate) {
+		return view_iterator < _it_t, _predicate_t> { it, end, predicate };
+	}
+
+	// view
+	template < class _source_t >
+	struct view {
+
+		using item_type = typename source_traits < _source_t >::value_type;
+		using value_type = typename source_traits < _source_t >::value_type;
+
+		_source_t & 
+			data;
+
+		using predicate_t = function < bool (item_type &) >;
+
+		predicate_t predicate;
+
+		inline auto begin() { 
+			return create_iterator (
+				std::begin(data), 
+				std::end (data), 
+				predicate
+			);
+		}
+
+		inline auto end() { 
+			return create_iterator (
+				std::end (data), 
+				std::end(data), 
+				predicate
+				); 
+		}
+
+		// create predicated view
+		inline view < _source_t > where(predicate_t pred) {
+			return{
+				data,
+				pred
+			};
+		}
+
+		// make vector
+		template < class _container_t = std::vector < _value_t > >
+		inline _container_t to_container () const {
+			_container_t result;
+
+			for (auto v : *this)
+				result.push_back(v);
+
+			return result;
+		}
+
+		// visitor pattern
+		inline void visit( function < void ( value_type &) > & call) {
+			for (auto i : *this)
+				call(i);
+		}
+
+		inline void visit(function < bool (value_type &) > & call) {
+			for (auto i : *this) {
+				if (!call(i))
+					return;
+			}
+		}
+
+		inline size_t count() const {
+			size_t c = 0;
+			auto
+				it = std::begin(data),
+				end = std::end(data);
+
+			while (it != end) {
+				if (!predicate || predicate (*it))
+					++c;
+
+				++it;
+			}
+
+			return c;
+		}
+
+		inline value_type first_or_default() const {
+			auto it = begin();
+			if (it != end())
+				return *it;
+
+			return value_type ();
+		}
+
+		inline value_type first_or_default(predicate_t predicate) const {
+			auto
+				it = std::begin(data),
+				end = std::end(data);
+
+			while (it != end) {
+				if (!predicate || predicate(it))
+					return *it;
+				++it;
+			}
+
+			return value_type ();
+		}
+
+		template < class _add_f = extras::add >
+		inline typename _add_f::result_type sum() const {
+			auto result = typename _add_f::result_type();
+			_add_f add_operation;
+
+			for (auto v : *this)
+				result = add_operation (result, v);
+
+			return result;
+		}
+
+		template < 
+			class _container_t = std::vector < value_type >,
+			class _comparer_t = std::less < item_type >
+		>
+		inline _container_t distinct() const {
+			using key_set = std::set < item_type, _comparer_t >;
+
+			key_set keys;
+			_container_t result;
+
+			typename key_set::const_iterator
+				map_it,
+				mat_end = keys.end();
+
+			for (auto i : *this) {
+				map_it = keys.find(i);
+				if (map_it != map_end) {
+					keys.insert(i);
+					result.push_back(i);
+				}
+			}
+
+			return result;
+		}
+	};
+
+}
+
+template < class _src_t >
+inline auto from (_src_t & data_source) {
+	return details::view < _src_t > { data_source };
+}
+*/
+
 namespace lincxx {
 
 	namespace details {
